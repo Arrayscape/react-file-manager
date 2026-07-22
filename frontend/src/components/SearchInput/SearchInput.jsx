@@ -26,39 +26,58 @@ const SearchInput = ({ onSearchFilterChange, searchText, searchRegex, searchCasi
     }, [])
 
     const clickRegex = () => {
-        onSearchFilterChange(inputRef.current.value, !filterRegex, filterCasing)
-        setFilterRegex(!filterRegex)
-        setSelectedFiles(applyFilters(selectedFiles, inputRef.current.value, filterRegex, filterCasing, categories, currentFolder?.categories))
+        const next = !filterRegex
+        onSearchFilterChange(inputRef.current.value, next, filterCasing)
+        setFilterRegex(next)
+        setSelectedFiles(applyFilters(selectedFiles, inputRef.current.value, next, filterCasing, categories, currentFolder?.categories))
     }
 
     const clickCasing = () => {
-        onSearchFilterChange(inputRef.current.value, filterRegex, !filterCasing)
-        setFilterCasing(!filterCasing)
-        setSelectedFiles(applyFilters(selectedFiles, inputRef.current.value, filterRegex, filterCasing, categories, currentFolder?.categories))
+        const next = !filterCasing
+        onSearchFilterChange(inputRef.current.value, filterRegex, next)
+        setFilterCasing(next)
+        setSelectedFiles(applyFilters(selectedFiles, inputRef.current.value, filterRegex, next, categories, currentFolder?.categories))
     }
 
+    const paddingRight = (searchRegex && searchCasing) ? '52px' : (searchRegex || searchCasing) ? '30px' : '22px'
+    const btnStyle = (active) => ({
+        border: `1px solid ${active ? 'currentColor' : 'rgba(128,128,128,0.4)'}`,
+        borderRadius: '3px',
+        backgroundColor: active ? 'rgba(128,128,128,0.25)' : 'transparent',
+        color: 'inherit',
+        position: 'absolute',
+        top: '50%',
+        width: '18px',
+        height: '18px',
+        fontSize: '9px',
+        lineHeight: '18px',
+        textAlign: 'center',
+        transform: 'translateY(-55%)',
+        cursor: 'pointer',
+        userSelect: 'none',
+    })
+
     return (
-        <div>
-            <input 
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+            <input
                 ref={inputRef}
                 placeholder='Search...'
                 defaultValue={searchText}
                 className='search-input'
+                style={{ paddingRight }}
                 onFocus={(e) => e.target.placeholder = ""}
-                onBlur={
-                    (e) => {
-                        e.target.placeholder = 'Search...'
-                    }
-                }
+                onBlur={(e) => { e.target.placeholder = 'Search...' }}
                 onKeyUp={(e) => {
                     if (e.key === 'Escape') {
                         onSearchFilterChange('', false, false)
-                        setSelectedFiles(applyFilters(selectedFiles, inputRef.current.value, filterRegex, filterCasing, categories, currentFolder?.categories))
+                        setFilterRegex(false)
+                        setFilterCasing(false)
+                        setSelectedFiles(applyFilters(selectedFiles, '', false, false, categories, currentFolder?.categories))
                         if (inputRef.current) {
-                            inputRef.current.value = ''; 
-                            inputRef.current.placeholder = 'Search...';
-                            inputRef.current.blur();
-                        }                        
+                            inputRef.current.value = ''
+                            inputRef.current.placeholder = 'Search...'
+                            inputRef.current.blur()
+                        }
                     }
                     else {
                         onSearchFilterChange(inputRef.current.value, filterRegex, filterCasing)
@@ -67,26 +86,20 @@ const SearchInput = ({ onSearchFilterChange, searchText, searchRegex, searchCasi
                 }}
             />
             { !searchRegex && !searchCasing &&
-                <svg 
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="#888"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-55%)", pointerEvents: "none" }}
+                <svg
+                    width="16" height="16" fill="none" stroke="#888" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                    style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-55%)', pointerEvents: 'none' }}
                 >
                     <circle cx="11" cy="11" r="6" />
                     <line x1="21" y1="21" x2="14.65" y2="14.65" />
                 </svg>
             }
             { searchRegex &&
-                <span style={{ border: '1px solid #e0e0e0', borderRadius:'4px', backgroundColor: filterRegex? 'black' : '#f5f5f5', color: filterRegex? 'white':'', position: "absolute", right: (searchCasing?28:8)+"px", top: "50%", width:'14px', height:'14px', fontSize:'10px', textAlign:'center', transform: "translateY(-60%)", cursor:'default' }} onClick={clickRegex}><b>.*</b></span>
+                <span style={{ ...btnStyle(filterRegex), right: searchCasing ? '28px' : '6px' }} onClick={clickRegex}><b>.*</b></span>
             }
             { searchCasing &&
-                <span style={{ border: '1px solid #e0e0e0', borderRadius:'4px', backgroundColor: filterCasing? 'black' : '#f5f5f5', color: filterCasing? 'white':'', position: "absolute", right: "12px", top: "50%", width:'14px', height:'14px', fontSize:'9px', verticalAlign:'center',  textAlign:'center', transform: "translateY(-60%)", cursor:'default' }} onClick={clickCasing}><b>aA</b></span>
+                <span style={{ ...btnStyle(filterCasing), right: '6px' }} onClick={clickCasing}><b>aA</b></span>
             }
         </div>
     )

@@ -132,9 +132,9 @@ const FileList = ({
     if (currentFolder && currentFolder.layout==='own' && currentFolder.children && typeof currentFolder.children === 'function') {
         // render custom layout ('own')
         return (
-            <div className='files' style={{paddingRight:0, height: `100%`}}>
+            <div className='files own-layout' style={{paddingRight:0, height: `100%`}}>
                 {currentFolder.children(currentFolder)}
-            </div>                
+            </div>
             )
     }
     else {

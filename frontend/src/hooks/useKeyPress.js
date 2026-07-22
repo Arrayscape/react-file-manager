@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 
 const normalizeKey = (key) => {
-  return key.toLowerCase();
+  // Guard: window keydown/keyup can deliver an undefined `key` (synthetic events, autofill, IME…), and the
+  // `keys` config may contain an undefined entry. Never call toLowerCase on undefined → return '' instead.
+  return (key ?? '').toLowerCase();
 }
 
 export const useKeyPress = (keys, callback, disable = false) => {

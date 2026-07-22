@@ -6,8 +6,8 @@ export default defineConfig({
   publicDir: false,
   plugins: [react()],
   build: {
-    minify: false,
-    sourcemap: true,
+    minify: true,
+    sourcemap: false,
     lib: {
       entry: "./src/index.js",
       name: "ReactFileManager",
@@ -15,7 +15,7 @@ export default defineConfig({
       formats: ["es"],
     },
     rollupOptions: {
-      external: ["react", "react-dom", "react/jsx-runtime"],
+      external: ["react", "react-dom", "react/jsx-runtime", /^react-icons/],
       output: {
         globals: {
           react: "React",

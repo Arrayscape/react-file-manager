@@ -264,8 +264,8 @@ const FileManagerBody = ({ props, innerRef }) => {
                                     onSearchFilterChange={onSearchFilterChange}
                                     searchMode={searchMode}
                                     searchText={srchText}
-                                    searchRegex={srchRegex}
-                                    searchCasing={srchCasing}
+                                    searchRegex={searchRegex}
+                                    searchCasing={searchCasing}
                                     categories={categories}
                                     fontFamily={fontFamily}
                                     showBreadcrumb={showBreadcrumb}

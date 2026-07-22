@@ -1,15 +1,16 @@
 .search-input {
-    border-top:0;
-    border-left:0;
-    border-right:0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
     border-bottom: 1px solid #999;
     font-family: var(--file-manager-font-family);
     outline: none;
-    padding-right: 18px;
     margin-right: 12px;
     box-shadow: none;
     box-sizing: border-box;
-    width:120;
-    min-width:120;
-    max-width:120
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    background: transparent;
+    color: inherit;
 }

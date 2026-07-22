@@ -10,7 +10,6 @@ import { useLayout } from '../../contexts/LayoutContext'
 import { useOptions } from '../../contexts/OptionsContext'
 import Checkbox from '../../components/Checkbox/Checkbox'
 import { getObjectSize } from '../../utils/getObjectSize'
-import { DateTime } from 'luxon'
 import { applyFilters } from '../../utils/filters'
 
 const dragIconSize = 50
@@ -213,24 +212,11 @@ const FileItem = ({
     }, [selectedFileIndexes])
 
 
-    function formatAgeCompact(duration) {
+    function formatAgeCompact({ days, hours, minutes }) {
         let parts = []
-
-        const days = Math.floor(duration.days)
-        if (days > 0) {
-            parts.push(`${days}d`)
-            duration = duration.minus({ days })
-        }
-
-        const hours = Math.floor(duration.hours)
-        if (hours > 0 || parts.length > 0) {
-            parts.push(`${hours}h`)
-            duration = duration.minus({ hours })
-        }
-
-        const minutes = Math.floor(duration.minutes)
+        if (days > 0) parts.push(`${days}d`)
+        if (hours > 0 || parts.length > 0) parts.push(`${hours}h`)
         if (minutes > 0 && parts.length < 2) parts.push(`${minutes}m`)
-
         return parts.slice(0, 2).join('')
     }    
 
@@ -335,11 +321,16 @@ const FileItem = ({
                         case 'storage':
                             content = convertBytesToSize(file.data[property.source])
                             break
-                        case 'age':
-                            let ts = DateTime.fromISO(file.data[property.source])
-                            const duracion = DateTime.now().diff(ts, ['days', 'hours', 'minutes'])
+                        case 'age': {
+                            const ms = Date.now() - new Date(file.data[property.source]).getTime()
+                            const duracion = {
+                                days:    Math.floor(ms / 86400000),
+                                hours:   Math.floor((ms % 86400000) / 3600000),
+                                minutes: Math.floor((ms % 3600000) / 60000)
+                            }
                             content = formatAgeCompact(duracion)
                             break
+                        }
                         case 'function':
                             content='n/a'
                             if (property.source && typeof property.source === 'function') content = property.source(file.path)
