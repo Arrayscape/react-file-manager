@@ -32,7 +32,19 @@ export const applySearchText = (f, searchText, searchRegex, searchCasing) => {
 
 export const applyCategories = (f, allCategories, folderCategories) => {
     if (allCategories && folderCategories) {
-        let applicableCategories = allCategories.filter(c => folderCategories.includes(c.key))
+        // A category that reports itself inactive filters nothing.
+        //
+        // Without this every file in a folder that declares a category is put
+        // to `onCategoryFilter` even when the user has chosen no value for it,
+        // and the honest answer to "does this file match the empty selection?"
+        // is no — so the folder renders as empty. `isFilterActive` is already
+        // part of the category: it is what decides whether the filter button
+        // is drawn as active. It decides this too now.
+        //
+        // A category that does not provide one behaves exactly as before.
+        let applicableCategories = allCategories
+            .filter(c => folderCategories.includes(c.key))
+            .filter(c => !c.isFilterActive || c.isFilterActive(c.key))
         let valid=true
         for (let c of applicableCategories) {
             valid = valid && c.onCategoryFilter(c.key, f)
