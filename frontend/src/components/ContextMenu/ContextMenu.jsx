@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FaChevronRight } from "react-icons/fa6";
 import SubMenu from "./SubMenu";
 import "./ContextMenu.scss";
 
-const ContextMenu = ({ filesViewRef, contextMenuRef, menuItems, visible, clickPosition }) => {
+const ContextMenu = ({ contextMenuRef, menuItems, visible, clickPosition }) => {
     const [left, setLeft] = useState(0)
     const [top, setTop] = useState(0)
     const [activeSubMenuIndex, setActiveSubMenuIndex] = useState(null)
@@ -11,43 +12,33 @@ const ContextMenu = ({ filesViewRef, contextMenuRef, menuItems, visible, clickPo
 
     const subMenuRef = useRef(null)
 
+    // Placed in viewport coordinates, because the menu is rendered into
+    // `document.body` and positioned `fixed` — see the portal at the bottom of
+    // this file for why.
+    //
+    // It used to be placed inside the file list and measured against that
+    // container, which cannot work: the list scrolls (`overflow-y: auto`), so
+    // anything reaching past its edges is cut off, and a menu opened near the
+    // bottom or on the last row was cut off exactly when it mattered. The room
+    // to fall back on is the room on screen, not the room inside a pane.
     const contextMenuPosition = () => {
         const { clickX, clickY } = clickPosition
 
-        const container = filesViewRef.current
-        const containerRect = container.getBoundingClientRect()
-        const scrollBarWidth = container.offsetWidth - container.clientWidth
+        const menu = contextMenuRef.current.getBoundingClientRect()
+        const menuWidth = menu.width
+        const menuHeight = menu.height
+        const margin = 8
 
-        // Context menu size
-        const contextMenuContainer = contextMenuRef.current.getBoundingClientRect()
-        const menuWidth = contextMenuContainer.width
-        const menuHeight = contextMenuContainer.height
+        const roomRight = window.innerWidth - clickX > menuWidth
+        const roomBelow = window.innerHeight - clickY > menuHeight
 
-        // Check if there is enough space at the right for the context menu
-        const leftToCursor = clickX - containerRect.left
-        const right = containerRect.width - (leftToCursor + scrollBarWidth) > menuWidth
-        const left = !right
+        // Open away from the pointer when there is no room in front of it, and
+        // never past the edge of the window.
+        const clamp = (value, limit) => Math.max(margin, Math.min(value, limit - margin))
 
-        const topToCursor = clickY - containerRect.top
-        const top = containerRect.height - topToCursor > menuHeight
-        const bottom = !top
-
-        if (right) {
-            setLeft(`${leftToCursor}px`);
-            setSubMenuPosition("right");
-        }
-        else if (left) {
-            // Location: -width of the context menu from cursor's position i.e. left side
-            setLeft(`${leftToCursor - menuWidth}px`);
-            setSubMenuPosition("left");
-        }
-
-        if (top) {
-            setTop(`${topToCursor + container.scrollTop}px`);
-        }
-        else if (bottom) {
-            setTop(`${topToCursor + container.scrollTop - menuHeight}px`);
-        }
+        setLeft(`${clamp(roomRight ? clickX : clickX - menuWidth, window.innerWidth - menuWidth)}px`)
+        setTop(`${clamp(roomBelow ? clickY : clickY - menuHeight, window.innerHeight - menuHeight)}px`)
+        setSubMenuPosition(roomRight ? "right" : "left")
     }
 
     const handleContextMenu = (e) => {
@@ -71,12 +62,24 @@ const ContextMenu = ({ filesViewRef, contextMenuRef, menuItems, visible, clickPo
     }, [visible])
 
     if (visible) {
-        return (<div
+        // Into `document.body`, for two reasons.
+        //
+        // The file list clips whatever leaves it, so a menu living inside it
+        // could never open past its edge. And `fixed` inside an ancestor that
+        // carries a `transform` — a modal, an offcanvas, anything animating —
+        // is fixed to that ancestor rather than to the window, which would put
+        // the menu somewhere else entirely.
+        //
+        // The outside-click handler that closes it reads the DOM rather than
+        // the React tree, so it is unaffected.
+        return createPortal(<div
             ref={contextMenuRef}
             onContextMenu={handleContextMenu}
             onClick={(e) => e.stopPropagation()}
             className={`fm-context-menu ${top ? "visible" : "hidden"}`}
             style={{
+            position: "fixed",
+            zIndex: 9999,
             top: top,
             left: left,
             }}
@@ -119,7 +122,7 @@ const ContextMenu = ({ filesViewRef, contextMenuRef, menuItems, visible, clickPo
                 })}
             </ul>
             </div>
-        </div>)
+        </div>, document.body)
     }
 }
 
