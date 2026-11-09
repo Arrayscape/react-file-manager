@@ -25,12 +25,10 @@ const RenameAction = ({ filesViewRef, file, onRename, triggerAction }) => {
   const t = useTranslation();
 
   const warningModalRef = useRef(null);
-  const outsideClick = useDetectOutsideClick((e) => {
-    if (!warningModalRef.current?.contains(e.target)) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
+  // Same as CreateFolder.action: the dismissing click is no longer swallowed,
+  // so it reaches what the user clicked instead of being spent closing the
+  // editor. The rename itself still commits first.
+  const outsideClick = useDetectOutsideClick();
 
   const handleValidateFolderRename = (e) => {
     e.stopPropagation();

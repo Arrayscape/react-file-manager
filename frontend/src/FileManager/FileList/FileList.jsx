@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import FileItem from './FileItem'
 import { useFileNavigation } from '../../contexts/FileNavigationContext'
 import { useLayout } from '../../contexts/LayoutContext'
@@ -113,7 +114,7 @@ const FileList = ({
         if (currentFolder && currentFolder.layout==='own' && currentFolder.children && typeof currentFolder.children === 'function') return <></>
 
         let list = currentPathFiles.filter (file => applySearchText(file, searchText, searchRegex, searchCasing))
-        if (categories) list = list.filter(file => applyCategories(file, categories, currentFolder.categories))
+        if (categories) list = list.filter(file => applyCategories(file, categories, currentFolder?.categories))
         let text = list.length + ' Items'
         if (selectedFileIndexes.length>0) {
             text+= '\u00A0\u00A0\u00A0\u00A0' + selectedFileIndexes.length +'\u00A0items selected'
@@ -161,7 +162,22 @@ const FileList = ({
                     </div>
                 )}
 
-                {columnSelectorPos &&
+                {/* Rendered into `document.body` rather than here.
+                  *
+                  * The menu is placed at the viewport coordinates of the three
+                  * dots, which is what `position: fixed` wants — but a fixed
+                  * element inside an ancestor carrying a `transform` is fixed
+                  * to THAT ancestor's box, not to the viewport, and every
+                  * animated container has one: a Bootstrap modal, an offcanvas,
+                  * a card mid-transition. The menu then lands as far out as
+                  * that ancestor is offset. Measured inside one: 130px below
+                  * the dots and past the right edge of the window.
+                  *
+                  * A portal takes it out of that subtree, so the coordinates
+                  * mean what they say wherever the file manager is embedded.
+                  * The outside-click handler reads the DOM, not the React
+                  * tree, so it still closes correctly. */}
+                {columnSelectorPos && createPortal(
                     <HeaderSelector
                         setHeaderSelectorVisible={() => setColumnSelectorPos(null)}
                         onHeaderToggle={onHeaderToggle}
@@ -169,8 +185,9 @@ const FileList = ({
                         space={space}
                         spaces={spaces}
                         style={{ position: 'fixed', top: columnSelectorPos.top, left: columnSelectorPos.left, transform: 'translateX(-100%)', zIndex: 9999, fontFamily }}
-                    />
-                }
+                    />,
+                    document.body
+                )}
 
             <div
                 ref={filesViewRef}
@@ -181,9 +198,18 @@ const FileList = ({
             >
 
                 {currentPathFiles?.length > 0 ? (
-                    currentFolder && currentPathFiles.map((file, index) => 
+                    // There is no folder record for the top level: `currentPath`
+                    // starts as '' and no entry's path can match it, so
+                    // `currentFolder` is null there. Gating the rows on it left
+                    // the root drawing nothing at all while the status bar below
+                    // went on counting the files it was not drawing.
+                    //
+                    // The record was only ever needed for the folder's category
+                    // list, and `applyCategories` already reads a missing list
+                    // as "this folder filters by nothing".
+                    currentPathFiles.map((file, index) =>
                         applySearchText(file, searchText, searchRegex, searchCasing) &&
-                        applyCategories(file, categories, currentFolder.categories) &&
+                        applyCategories(file, categories, currentFolder?.categories) &&
                         <FileItem
                             columnWidths={columnWidths}
                             key={file.name}

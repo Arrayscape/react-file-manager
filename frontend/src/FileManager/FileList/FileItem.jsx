@@ -101,7 +101,9 @@ const FileItem = ({
 
             const filesRange = currentPathFiles.slice(startRange, endRange + 1)
             let selected = reverseSelection ? filesRange.reverse() : filesRange
-            selected = applyFilters(selected, searchText, searchRegex, searchCasing, categories, currentFolder.categories)
+            // `currentFolder` is null at the top level, and a shift-range there
+            // would otherwise throw while reading its category list.
+            selected = applyFilters(selected, searchText, searchRegex, searchCasing, categories, currentFolder?.categories)
             setSelectedFiles(selected)
         }
         else if (selectedFileIndexes.length > 0 && toggleKey) {
@@ -110,7 +112,7 @@ const FileItem = ({
             setSelectedFiles((prev) => {
                 const filteredFiles = prev.filter((f) => f.path !== file.path)
                 if (prev.length === filteredFiles.length) return [...prev, file]
-                return applyFilters(filteredFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories)
+                return applyFilters(filteredFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories)
             })
         }
         else {

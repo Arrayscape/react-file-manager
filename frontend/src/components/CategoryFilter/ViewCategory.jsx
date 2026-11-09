@@ -25,7 +25,7 @@ const ViewCategory = ({ setShowViewCategoryMenu, left, top, searchText, searchRe
         else
             category.selected.push(value)
         category.onCategoryValuesChange(category.key, value, category.selected)
-        setSelectedFiles(applyFilters(selectedFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories))
+        setSelectedFiles(applyFilters(selectedFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories))
     }
 
     return (

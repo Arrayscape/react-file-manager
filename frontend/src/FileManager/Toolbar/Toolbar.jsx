@@ -117,6 +117,12 @@ const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavi
             let items = []
             if (leftItems) {
                 leftItems.map((leftItem, index) => {
+                    // A `permission` of false means the host application has
+                    // withheld the action. The built-in New Folder, Upload and
+                    // Paste items carry one; items supplied by a custom space
+                    // leave it undefined, which is not a denial.
+                    if (leftItem.permission === false) return
+
                     if (!leftItem.isVisible || leftItem.isVisible(leftItem.name, currentFolder, selectedFiles)) {
                         let enabled = !leftItem.isEnabled || leftItem.isEnabled(leftItem.name, currentFolder, selectedFiles)
                         if (enabled) {
@@ -201,14 +207,14 @@ const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavi
     const onSelectChange = (change) => {
         switch (change) {
             case 'all':
-                setSelectedFiles(applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories))
+                setSelectedFiles(applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories))
                 break
             case 'none':
                 setSelectedFiles([])
                 break
             case 'invert':
                 let result=[]
-                for(let f of applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories))
+                for(let f of applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories))
                     if (!selectedFiles.includes(f)) result.push(f)
                 setSelectedFiles(result)
                 break
