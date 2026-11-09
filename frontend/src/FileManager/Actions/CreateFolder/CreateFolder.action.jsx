@@ -16,10 +16,20 @@ const CreateFolderAction = ({ filesViewRef, file, onCreateFolder, triggerAction 
   const [folderErrorMessage, setFolderErrorMessage] = useState("");
   const [errorXPlacement, setErrorXPlacement] = useState("right");
   const [errorYPlacement, setErrorYPlacement] = useState("bottom");
-  const outsideClick = useDetectOutsideClick((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
+  // The click that dismisses this editor is left alone on purpose.
+  //
+  // It used to be stopped and prevented, and the listener runs in the capture
+  // phase on `document`, so the click never reached whatever was under it: the
+  // folder was created but the application did not go where the user clicked,
+  // and a second click was needed to get there. Worse, it was a race — the
+  // commit unmounts this component, so if that happened between mousedown and
+  // click the click did land — which is why the same gesture sometimes moved
+  // and sometimes did not.
+  //
+  // Committing on dismissal is kept: that is what Finder and Explorer do, and
+  // the commit still runs first, so the folder is created in the folder the
+  // user was in rather than the one they are going to.
+  const outsideClick = useDetectOutsideClick();
   const { currentFolder, currentPathFiles, setCurrentPathFiles } = useFileNavigation();
   const { activeLayout } = useLayout();
   const t = useTranslation();
