@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import FileItem from './FileItem'
 import { useFileNavigation } from '../../contexts/FileNavigationContext'
 import { useLayout } from '../../contexts/LayoutContext'
@@ -161,7 +162,22 @@ const FileList = ({
                     </div>
                 )}
 
-                {columnSelectorPos &&
+                {/* Rendered into `document.body` rather than here.
+                  *
+                  * The menu is placed at the viewport coordinates of the three
+                  * dots, which is what `position: fixed` wants — but a fixed
+                  * element inside an ancestor carrying a `transform` is fixed
+                  * to THAT ancestor's box, not to the viewport, and every
+                  * animated container has one: a Bootstrap modal, an offcanvas,
+                  * a card mid-transition. The menu then lands as far out as
+                  * that ancestor is offset. Measured inside one: 130px below
+                  * the dots and past the right edge of the window.
+                  *
+                  * A portal takes it out of that subtree, so the coordinates
+                  * mean what they say wherever the file manager is embedded.
+                  * The outside-click handler reads the DOM, not the React
+                  * tree, so it still closes correctly. */}
+                {columnSelectorPos && createPortal(
                     <HeaderSelector
                         setHeaderSelectorVisible={() => setColumnSelectorPos(null)}
                         onHeaderToggle={onHeaderToggle}
@@ -169,8 +185,9 @@ const FileList = ({
                         space={space}
                         spaces={spaces}
                         style={{ position: 'fixed', top: columnSelectorPos.top, left: columnSelectorPos.left, transform: 'translateX(-100%)', zIndex: 9999, fontFamily }}
-                    />
-                }
+                    />,
+                    document.body
+                )}
 
             <div
                 ref={filesViewRef}
