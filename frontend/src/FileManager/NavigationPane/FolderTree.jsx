@@ -3,13 +3,28 @@ import Collapse from "../../components/Collapse/Collapse";
 import { FaRegFolder, FaRegFolderOpen } from "react-icons/fa";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { useFileNavigation } from "../../contexts/FileNavigationContext";
+import { useSelection } from "../../contexts/SelectionContext";
 
 const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isActive, setIsActive] = useState(false)
   const { currentPath, setCurrentPath, onFolderChange } = useFileNavigation()
+  const { setSelectedFiles } = useSelection()
 
-  const handleFolderSwitch = () => {
+  const handleFolderSwitch = (e) => {
+    // Ctrl/Cmd + click picks the folder instead of entering it.
+    //
+    // Without this a node in the tree can only ever be opened, so a folder is
+    // not selectable from here at all: hosts driving a picker from `onSelect`
+    // never see the folder the user clicked, and a folder cannot be renamed
+    // or deleted from the tree. Plain click is left exactly as it was, so no
+    // existing behaviour changes.
+    if (e?.ctrlKey || e?.metaKey) {
+      e.stopPropagation()
+      setSelectedFiles([folder])
+      return
+    }
+
     setIsActive(true)
     onFileOpen(folder)
     setCurrentPath(folder.path)
