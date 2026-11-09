@@ -113,7 +113,7 @@ const FileList = ({
         if (currentFolder && currentFolder.layout==='own' && currentFolder.children && typeof currentFolder.children === 'function') return <></>
 
         let list = currentPathFiles.filter (file => applySearchText(file, searchText, searchRegex, searchCasing))
-        if (categories) list = list.filter(file => applyCategories(file, categories, currentFolder.categories))
+        if (categories) list = list.filter(file => applyCategories(file, categories, currentFolder?.categories))
         let text = list.length + ' Items'
         if (selectedFileIndexes.length>0) {
             text+= '\u00A0\u00A0\u00A0\u00A0' + selectedFileIndexes.length +'\u00A0items selected'
@@ -181,9 +181,18 @@ const FileList = ({
             >
 
                 {currentPathFiles?.length > 0 ? (
-                    currentFolder && currentPathFiles.map((file, index) => 
+                    // There is no folder record for the top level: `currentPath`
+                    // starts as '' and no entry's path can match it, so
+                    // `currentFolder` is null there. Gating the rows on it left
+                    // the root drawing nothing at all while the status bar below
+                    // went on counting the files it was not drawing.
+                    //
+                    // The record was only ever needed for the folder's category
+                    // list, and `applyCategories` already reads a missing list
+                    // as "this folder filters by nothing".
+                    currentPathFiles.map((file, index) =>
                         applySearchText(file, searchText, searchRegex, searchCasing) &&
-                        applyCategories(file, categories, currentFolder.categories) &&
+                        applyCategories(file, categories, currentFolder?.categories) &&
                         <FileItem
                             columnWidths={columnWidths}
                             key={file.name}

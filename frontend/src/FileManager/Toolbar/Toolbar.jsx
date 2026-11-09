@@ -201,14 +201,14 @@ const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavi
     const onSelectChange = (change) => {
         switch (change) {
             case 'all':
-                setSelectedFiles(applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories))
+                setSelectedFiles(applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories))
                 break
             case 'none':
                 setSelectedFiles([])
                 break
             case 'invert':
                 let result=[]
-                for(let f of applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder.categories))
+                for(let f of applyFilters(currentPathFiles, searchText, searchRegex, searchCasing, categories, currentFolder?.categories))
                     if (!selectedFiles.includes(f)) result.push(f)
                 setSelectedFiles(result)
                 break
