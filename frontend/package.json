@@ -1,7 +1,7 @@
 {
-  "name": "@jfvilas/react-file-manager",
+  "name": "@arrayscape/react-file-manager",
   "private": false,
-  "version": "1.5.6",
+  "version": "1.5.6-arrayscape.1",
   "type": "module",
   "module": "dist/react-file-manager.es.js",
   "files": [
@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "prepublishOnly": "npm run build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "semantic-release": "semantic-release"
@@ -57,10 +58,10 @@
     }
   },
   "description": "React File Manager is an open-source, user-friendly component designed to easily manage files and folders within applications. With smooth drag-and-drop functionality, responsive design, and efficient navigation, it simplifies file handling in any React project.",
-  "main": "src/index.js",
+  "main": "dist/react-file-manager.es.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jfvilas/react-file-manager.git"
+    "url": "git+https://github.com/Arrayscape/react-file-manager.git"
   },
   "keywords": [
     "react",
@@ -71,7 +72,7 @@
   "author": "Saifullah Zubair / Julio Fernandez",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jfvilas/react-file-manager/issues"
+    "url": "https://github.com/Arrayscape/react-file-manager/issues"
   },
-  "homepage": "https://github.com/jfvilas/react-file-manager#readme"
+  "homepage": "https://github.com/Arrayscape/react-file-manager#readme"
 }
