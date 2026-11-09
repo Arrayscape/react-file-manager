@@ -82,7 +82,10 @@ const FileItem = ({
         }
     }
 
-    const handleFileRangeSelection = (shiftKey, ctrlKey) => {
+    // `toggleKey` is Ctrl on Windows and Linux, Cmd on macOS. It is passed in
+    // already resolved rather than read from the event here, because the two
+    // keys mean the same thing to the user and only the caller sees the event.
+    const handleFileRangeSelection = (shiftKey, toggleKey) => {
         if (selectedFileIndexes.length > 0 && shiftKey) {
             let reverseSelection = false
             let startRange = selectedFileIndexes[0]
@@ -101,8 +104,8 @@ const FileItem = ({
             selected = applyFilters(selected, searchText, searchRegex, searchCasing, categories, currentFolder.categories)
             setSelectedFiles(selected)
         }
-        else if (selectedFileIndexes.length > 0 && ctrlKey) {
-            // Remove file from selected files if it already exists on CTRL + Click, otherwise push it in selectedFiles
+        else if (selectedFileIndexes.length > 0 && toggleKey) {
+            // Remove file from selected files if it already exists on Ctrl/Cmd + Click, otherwise push it in selectedFiles
 
             setSelectedFiles((prev) => {
                 const filteredFiles = prev.filter((f) => f.path !== file.path)
@@ -120,7 +123,10 @@ const FileItem = ({
         e.stopPropagation()
         if (file.isEditing) return
 
-        handleFileRangeSelection(e.shiftKey, e.ctrlKey)
+        // On macOS the add-to-selection modifier is Cmd (metaKey); Ctrl+click
+        // is the system context-menu gesture there, so reading ctrlKey alone
+        // leaves Mac users with no way to extend a selection at all.
+        handleFileRangeSelection(e.shiftKey, e.ctrlKey || e.metaKey)
 
         const currentTime = new Date().getTime()
         if (currentTime - lastClickTime < 300) {
