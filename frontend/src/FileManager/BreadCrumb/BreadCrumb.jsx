@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { MdHome, MdMoreHoriz, MdOutlineNavigateNext } from 'react-icons/md'
 import { TbLayoutSidebarLeftExpand, TbLayoutSidebarLeftCollapseFilled } from 'react-icons/tb'
 import { useFileNavigation } from '../../contexts/FileNavigationContext'
+import { useFiles } from '../../contexts/FilesContext'
 import { useDetectOutsideClick } from '../../hooks/useDetectOutsideClick'
 import { useTranslation } from '../../contexts/TranslationProvider'
 import { useLayout } from '../../contexts/LayoutContext'
@@ -17,6 +18,7 @@ const BreadCrumb = ({ collapsibleNav, isNavigationPaneOpen, onNavigationPaneChan
     const [hiddenFoldersWidth, setHiddenFoldersWidth] = useState([])
     const [showHiddenFolders, setShowHiddenFolders] = useState(false)
     const { currentPathFiles, currentPath, setCurrentPath, onFolderChange, currentFolder } = useFileNavigation()
+    const { files } = useFiles()
     const breadCrumbRef = useRef(null)
     const foldersRef = useRef([])
     const moreBtnRef = useRef(null)
@@ -32,15 +34,24 @@ const BreadCrumb = ({ collapsibleNav, isNavigationPaneOpen, onNavigationPaneChan
         setFolders(() => {
             let path = ''
             return currentPath?.split('/').map((item) => {
+                const itemPath = item === '' ? item : (path += `/${item}`)
+                // A segment of the path is not always what the folder is
+                // called. A host whose paths are ids -- which is any host
+                // where two folders can share a name -- puts the readable one
+                // in `displayName`, and both the file list and the navigation
+                // pane show it. The trail showed the id, so the one thing on
+                // screen whose job is saying where you are said it in a
+                // language nobody reads.
+                const file = files?.find((f) => f.path === itemPath)
                 return {
-                    name: item || t('home'),
-                    path: item === '' ? item : (path += `/${item}`),
+                    name: file?.displayName || item || t('home'),
+                    path: itemPath,
                 }
             })
         })
         setHiddenFolders([])
         setHiddenFoldersWidth([])
-    }, [currentPath, t])
+    }, [currentPath, t, files])
 
     const switchPath = (path) => {
         setCurrentPath(path)

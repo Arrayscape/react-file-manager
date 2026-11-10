@@ -9,6 +9,12 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
   const [isActive, setIsActive] = useState(false)
   const { currentPath, setCurrentPath, onFolderChange } = useFileNavigation()
 
+  // `name` is the last segment of the path and has to stay unique, so a host
+  // whose paths are ids puts the readable name in `displayName` -- which the
+  // file list already shows. This pane showed the id, so the same folder was
+  // called two different things on one screen.
+  const label = folder.displayName || folder.name
+
   const handleFolderSwitch = () => {
     setIsActive(true)
     onFileOpen(folder)
@@ -54,8 +60,8 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
                   <FaRegFolder size={17} className="folder-close-icon" />
               )
             }
-            <span className="sb-folder-name" title={folder.name} style={{marginLeft:'2px'}}>
-              {folder.name}
+            <span className="sb-folder-name" title={label} style={{marginLeft:'2px'}}>
+              {label}
             </span>
           </div>
         </div>
@@ -87,8 +93,8 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
                 :
                 <FaRegFolder size={17} className="folder-close-icon" />
           )}
-          <span className="sb-folder-name" title={folder.name} style={{marginLeft:'2px'}}>
-            {folder.name}
+          <span className="sb-folder-name" title={label} style={{marginLeft:'2px'}}>
+            {label}
           </span>
         </div>
       </div>
