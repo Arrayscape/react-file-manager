@@ -146,6 +146,46 @@
   overflow: visible;
 }
 
+// A tile holds a name the host chose, and nothing in `.file-item` told it to
+// stay inside the tile. The name is centred, so it sized to its own content:
+// a 39-character filename became a 312px span on a 138px tile, hanging ~80px
+// off each side, and the tile beside it did the same -- so two names were
+// drawn over each other with neither readable. `.text-truncate` is already on
+// that span and had no width to ellipsise against.
+//
+// Two lines rather than one, because a library's names differ at the end. The
+// dashboard's are "Screenshot 2026-11-02 at 1.27.49 PM.png" and "Screenshot
+// 2026-11-04 at 10.04.46 AM.png"; one line of this tile holds "Screenshot
+// 2026-…", which names nothing and names both of them the same.
+//
+// These belong to the grid rather than to `.file-item`, which the list shares:
+// the 138x81 in that block is the grid's own size wearing a default's clothes,
+// and `.files.list` has been quietly overriding both of them all along.
+.files.grid {
+  .file-item {
+    // Room for the icon and two lines, and free to be taller. A counted
+    // height spills whatever does not fit the count, and under a host that
+    // sets `box-sizing: border-box` -- Bootstrap, Tailwind, normalize -- the
+    // count is 14px of padding short before the name is measured at all.
+    height: auto;
+    min-height: 81px;
+  }
+
+  .file-name {
+    max-width: 100%;
+    text-align: center;
+    // `.text-truncate` asks for one line; two, then the ellipsis.
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    // A name with no spaces in it -- an id, which is what a path segment
+    // often is -- has nowhere to wrap, and would hang off the side again.
+    overflow-wrap: anywhere;
+  }
+}
+
 .files.list {
   flex-direction: column;
   flex-wrap: nowrap;

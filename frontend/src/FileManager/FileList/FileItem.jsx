@@ -235,6 +235,15 @@ const FileItem = ({
             return activeLayout==='list'? `calc(${spaces.get(space).width}% - 34px)` : ''
     }
 
+    // The list indents the name past the checkbox, which sits in the flow at
+    // the left of the row. A tile's checkbox is positioned over its corner
+    // instead, so in the grid that indent only pushed everything -- icon and
+    // name both -- 6px right of the tile's centre, which is visible the
+    // moment the name is a centred block rather than a word.
+    const namePadding = activeLayout === 'grid'
+        ? { paddingLeft: '6px', paddingRight: '6px' }
+        : { paddingLeft: options.checkBox ? '33px' : '12px', paddingRight: 0 }
+
     let showFileName = file.displayName || file.name
 
     return (
@@ -257,7 +266,7 @@ const FileItem = ({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
-            <div className='file-item' style={{ paddingRight:0, paddingLeft: options.checkBox? '33px':'12px', width:colNameWidth()}}>
+            <div className='file-item' style={{ ...namePadding, width:colNameWidth()}}>
                 { !file.isEditing && options.checkBox && (
                     <Checkbox
                         name={file.name}

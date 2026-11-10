@@ -16,7 +16,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { FileManager } from '../src/index.js'
-import { assets, ROOT, SPACES, ASSET_SPACE, TRANSFORM_SPACE, ICONS, ALL_PERMISSIONS, swatch } from './fixtures.jsx'
+import { assets, longNames, ROOT, SPACES, ASSET_SPACE, TRANSFORM_SPACE, ICONS, ALL_PERMISSIONS, swatch } from './fixtures.jsx'
 
 const base = {
     files: assets,
@@ -129,6 +129,36 @@ function HostCssScenario() {
     )
 }
 
+/** Grid, under the same host CSS, with the names a real library has.
+ *
+ *  A tile is 138px wide and 81px tall, both counted by hand. The name under
+ *  it is centred, which makes it size to its own content unless something
+ *  says otherwise, and nothing did: a 39-character filename became a ~290px
+ *  span centred on a 138px tile, hanging 75px off each side. The tile beside
+ *  it did the same, so the two names were drawn over each other. The ellipsis
+ *  was already asked for -- `.text-truncate` is on that span -- and had no
+ *  width to ellipsise against.
+ *
+ *  The counted height goes the same way. Under `box-sizing: border-box` the
+ *  81px includes 14px of padding, leaving 67px for a 48px icon, an 8px gap
+ *  and a line of text, so the name is pushed out of the bottom of its own
+ *  tile and into the row beneath.
+ */
+function GridScenario() {
+    return (
+        <>
+            <style>{`
+                #scenario, #scenario *, #scenario *::before, #scenario *::after {
+                    box-sizing: border-box;
+                }
+                #scenario { font-size: 16px; }
+                #scenario input { font-family: inherit; font-size: inherit; line-height: 1.5; }
+            `}</style>
+            <FileManager {...base} files={longNames} layout="grid" showBreadcrumb />
+        </>
+    )
+}
+
 const SCENARIOS = [
     {
         key: 'assets',
@@ -198,6 +228,12 @@ const SCENARIOS = [
         title: 'The search box under a host that resets form controls',
         note: 'Bootstrap and friends set font-size: inherit on input. The breadcrumb row was pinned to 22px with overflow-x: hidden -- which makes the other axis scroll -- so a box taller than 22px had its bottom cut off. The default scenarios cannot show this: at the browser default of 13.33px the box fits.',
         render: () => <HostCssScenario />,
+    },
+    {
+        key: 'grid',
+        title: 'Grid, with the names a real library has',
+        note: 'Each name should stay inside its own tile and end in an ellipsis. The tile is 138x81 by hand: the name is centred, so it sized to its content and hung off both sides until two names overlapped, and under a host that sets box-sizing: border-box the counted height left no room for the line of text at all.',
+        render: () => <GridScenario />,
     },
     {
         key: 'nav-pane',

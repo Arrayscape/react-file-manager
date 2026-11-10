@@ -512,12 +512,75 @@ def test_nav_pane_toggle(ch):
           "first child %r" % (inside["text"] if inside else None))
 
 
+# --- a tile's name stays inside the tile -----------------------------------
+# The name is centred in the tile, which makes it size to its own content
+# unless something says otherwise, and nothing did. A 39-character filename
+# became a 312px span on a 138px tile, hanging ~80px off each side, and the
+# tile beside it did the same -- so two names were painted over each other
+# with neither readable. `.text-truncate` was already on that span; it had no
+# width to ellipsise against.
+GRID = """(() => {
+  const r = (el) => { const b = el.getBoundingClientRect();
+    return {l: Math.round(b.left), r: Math.round(b.right),
+            t: Math.round(b.top), b: Math.round(b.bottom),
+            w: Math.round(b.width), h: Math.round(b.height),
+            c: Math.round(b.left + b.width / 2)}; };
+  return [...document.querySelectorAll('.file-item-container')].map(t => {
+    const item = t.querySelector('.file-item');
+    const nm = t.querySelector('.file-name');
+    const icon = t.querySelector('.file-item > div[style*="flex-shrink"]');
+    return {text: nm.textContent, title: t.getAttribute('title'),
+            tile: r(item), name: r(nm), icon: icon ? r(icon) : null,
+            lines: Math.round(nm.scrollHeight / (nm.getBoundingClientRect().height || 1))};
+  });
+})()"""
+
+
+def test_grid_names(ch):
+    print("a tile's name stays inside the tile, and the tiles stay apart")
+    scenario(ch, "grid")
+
+    tiles = j(ch, GRID)
+    check("the grid drew some tiles", len(tiles) > 1, "got %d" % len(tiles))
+    if len(tiles) < 2:
+        return
+
+    for t in tiles:
+        short = t["text"][:18]
+        check("%r is inside its tile" % short,
+              t["name"]["l"] >= t["tile"]["l"] - 1 and t["name"]["r"] <= t["tile"]["r"] + 1,
+              "name %d..%d, tile %d..%d"
+              % (t["name"]["l"], t["name"]["r"], t["tile"]["l"], t["tile"]["r"]))
+        check("%r does not fall out of the bottom" % short,
+              t["name"]["b"] <= t["tile"]["b"] + 1,
+              "name bottom %d, tile bottom %d" % (t["name"]["b"], t["tile"]["b"]))
+        # The icon and the name share one centre line, which they did not
+        # while the tile carried the list's indent past its checkbox.
+        check("%r is centred under its icon" % short,
+              t["icon"] is not None
+              and abs(t["name"]["c"] - t["icon"]["c"]) <= 1
+              and abs(t["icon"]["c"] - t["tile"]["c"]) <= 1,
+              "name %s, icon %s, tile %s"
+              % (t["name"]["c"], t["icon"]["c"] if t["icon"] else None, t["tile"]["c"]))
+        # Cut short on screen, whole in the tooltip: a library's names differ
+        # at the end, so what is dropped is exactly what tells them apart.
+        check("%r is still available in full" % short,
+              t["title"] == t["text"], "title %r" % t["title"])
+
+    for a, b in zip(tiles, tiles[1:]):
+        if a["tile"]["t"] != b["tile"]["t"]:
+            continue  # different rows cannot collide horizontally
+        check("%r and %r do not overlap" % (a["text"][:14], b["text"][:14]),
+              a["name"]["r"] <= b["name"]["l"],
+              "first ends %d, second starts %d" % (a["name"]["r"], b["name"]["l"]))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
                   test_category_menu, test_search_box, test_chrome_fits,
-                  test_type_matches, test_nav_pane_toggle):
+                  test_type_matches, test_nav_pane_toggle, test_grid_names):
             t(ch)
             print()
     finally:

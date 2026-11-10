@@ -28,13 +28,13 @@ export const swatch = (hue, label) =>
             `</svg>`,
     )}`
 
-/** The record for the top level.
+/** The record for the top level: what that level is called, and which space
+ *  picks its columns and toolbar.
  *
- *  It cannot be a directory. The navigation pane groups directories by parent
- *  path, the parent of '' is '', so a directory at '' is its own parent and
- *  the tree builder recurses until the stack dies. `isDirectory: false` is
- *  found by the current-folder lookup and skipped by the tree, and is never
- *  listed as a file either, because children are matched as `${path}/${name}`.
+ *  Not a directory, because it is the level rather than something in it. The
+ *  current-folder lookup finds it by path, the navigation pane makes it the
+ *  tree's root, and it is never listed as a file either, because children are
+ *  matched as `${path}/${name}`.
  */
 export const ROOT = { name: 'Library', isDirectory: false, path: '', class: 'folder' }
 
@@ -113,6 +113,33 @@ export const assets = [
         path: '/Archive/mystery.bin',
         class: 'unknown',
         data: { kind: 'unrecognised', size: 991, uploader: 'tad', uploadedAt: '2026-09-12T12:00:00Z' },
+    },
+]
+
+/** The top level of a real library: a folder per picture, named after the
+ *  picture somebody uploaded, which is a sentence rather than a word.
+ *
+ *  The grid draws the name under a tile 138px wide and these are three times
+ *  that, which is the whole point -- `assets` above is named in words short
+ *  enough that nothing has to decide what to do with the overflow.
+ */
+export const longNames = [
+    ROOT,
+    {
+        name: '57c3572f-e0d7-4df0-98f3-ce736373e8ff',
+        displayName: 'Screenshot 2026-11-02 at 1.27.49 PM.png',
+        isDirectory: true,
+        path: '/57c3572f-e0d7-4df0-98f3-ce736373e8ff',
+        class: 'folder',
+        thumbnail: thumbOf(swatch(210, 'chart')),
+    },
+    {
+        name: 'b1d9e7a4-2c55-4f1e-9a77-0c4a1f6d8e32',
+        displayName: 'Screenshot 2026-11-04 at 10.04.46 AM.png',
+        isDirectory: true,
+        path: '/b1d9e7a4-2c55-4f1e-9a77-0c4a1f6d8e32',
+        class: 'folder',
+        thumbnail: thumbOf(swatch(25, 'poster')),
     },
 ]
 
