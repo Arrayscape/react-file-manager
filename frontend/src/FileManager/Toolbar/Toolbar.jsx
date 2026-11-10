@@ -56,18 +56,23 @@ const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavi
 
     let leftItems = fileDataLeftItems
     if (space!=='filedata' && spaces && spaces.has(space)) {
-        leftItems = spaces.get(space).leftItems || []
-        if (leftItems) {
-            if (currentPathFiles.length>0 && spaces.get(currentPathFiles[0].class)?.leftItems) {
-                if (selectedFiles.length>1) {
-                    leftItems = [...leftItems, ...spaces.get(currentPathFiles[0].class).leftItems.filter(i => i.multi)]
-                }
-                else {
-                    if (selectedFiles.length===1) leftItems = [...leftItems, ...spaces.get(currentPathFiles[0].class).leftItems]
-                }
-            }
-            leftItems = leftItems.filter(i => i.text!=='~')
-        }
+        // This folder's own actions, and then the actions of the class of
+        // thing inside it, which are the ones for whatever is selected.
+        const ownItems = spaces.get(space).leftItems || []
+        const childClass = currentPathFiles.length>0 ? currentPathFiles[0].class : undefined
+        const childItems = (childClass && spaces.get(childClass)?.leftItems) || []
+
+        // Items the folder already offers are not offered a second time. A
+        // host that maps two classes to one space, or hands the same array to
+        // both, listed every action twice -- Upload, Download, Delete,
+        // Upload, Download, Delete. Compared by identity, so this drops only
+        // what is literally the same item and never two actions that happen
+        // to share a label.
+        let selectionItems = childItems.filter(i => !ownItems.includes(i))
+        if (selectedFiles.length>1) selectionItems = selectionItems.filter(i => i.multi)
+        else if (selectedFiles.length!==1) selectionItems = []
+
+        leftItems = [...ownItems, ...selectionItems].filter(i => i.text!=='~')
     }
 
     // Toolbar Items
