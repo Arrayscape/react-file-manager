@@ -8,3 +8,22 @@ if (typeof URL.createObjectURL !== 'function') {
     URL.createObjectURL = () => 'blob:stub'
     URL.revokeObjectURL = () => {}
 }
+
+// jsdom has <dialog> as an element but not its modal behaviour: showModal and
+// close are simply absent, so every action modal throws as it mounts. The
+// component's own code is what we are testing, and it is correct to call them.
+//
+// Setting `open` is not cosmetic -- it is what the component reads back, and
+// what makes the dialog's children queryable.
+if (typeof HTMLDialogElement !== 'undefined') {
+    if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
+        HTMLDialogElement.prototype.showModal = function () {
+            this.open = true
+        }
+    }
+    if (typeof HTMLDialogElement.prototype.close !== 'function') {
+        HTMLDialogElement.prototype.close = function () {
+            this.open = false
+        }
+    }
+}

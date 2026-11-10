@@ -28,13 +28,20 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
   const { selectedFiles } = useSelection()
   const fileIcons = useFileIcons(73)
   const extension = getFileExtension(selectedFiles[0].name)?.toLowerCase()
-  const filePath = `${(fileDownloadConfig ? fileDownloadConfig.url : filePreviewPath)}${selectedFiles[0].path}`
+  // Both props are optional, so there may be no address at all. Building one
+  // regardless put the string 'undefined' at the front of it, and a host served
+  // from a single-page app answers that with its own index.html: the modal
+  // showed a broken image and the host's log showed a request nobody made. A
+  // host whose bytes sit behind a session cannot give a plain address and
+  // passes filePreviewComponent instead, so this is an ordinary case.
+  const base = fileDownloadConfig ? fileDownloadConfig.url : filePreviewPath
+  const filePath = base ? `${base}${selectedFiles[0].path}` : undefined
   const t = useTranslation()
 
   useEffect(() => {
     if (!filePath) return
     if (blobExtensions.includes(extension) || contentExtensions.includes(extension)) {
-      fetch(filePath, { method:'GET', ...(fileDownloadConfig.headers? { headers:fileDownloadConfig.headers} : {}) })
+      fetch(filePath, { method:'GET', ...(fileDownloadConfig?.headers? { headers:fileDownloadConfig.headers} : {}) })
         .then((res) => res.blob())
         .then((blob) => {
           if (contentExtensions.includes(extension)) {
@@ -74,16 +81,27 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
     return customPreview
   }
 
+  const showable = [
+    ...imageExtensions,
+    ...videoExtensions,
+    ...audioExtensions,
+    ...iFrameExtensions,
+    ...blobExtensions,
+  ].includes(extension)
+
+  // Three ways a preview cannot be shown, and all three belong in the panel
+  // written for it: the file is of a kind that cannot be displayed, nobody
+  // gave an address to fetch it from, or fetching it failed.
+  //
+  // The last of those used to show nothing at all. The condition read
+  // `hasError || (isUnknownKind && <div/>)`, and `true || x` is `true`, which
+  // React draws as nothing -- so the one case the panel exists for was the one
+  // case it never appeared in, leaving an empty modal.
+  const unavailable = hasError || !showable || !filePath
+
   return (
     <section className={`file-previewer ${extension === "pdf" ? "pdf-previewer" : ""}`}>
-      {hasError ||
-        (![
-          ...imageExtensions,
-          ...videoExtensions,
-          ...audioExtensions,
-          ...iFrameExtensions,
-          ...blobExtensions,
-        ].includes(extension) && (
+      {unavailable && (
           <div className="preview-error">
             <span className="error-icon">{fileIcons[extension] ?? <FaRegFileAlt size={73} />}</span>
             <span className="error-msg">{t("previewUnavailable")}</span>
@@ -92,15 +110,19 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
               {selectedFiles[0].size && <span>-</span>}
               <span className="file-size">{getObjectSize(selectedFiles[0].size)}</span>
             </div>
-            <Button onClick={handleDownload} padding="0.45rem .9rem">
-              <div className="download-btn">
-                <MdOutlineFileDownload size={18} />
-                <span>{t("download")}</span>
-              </div>
-            </Button>
+            {/* Downloading is the same address as previewing, so there is
+              * nothing to offer when there is no address. */}
+            {filePath && (
+              <Button onClick={handleDownload} padding="0.45rem .9rem">
+                <div className="download-btn">
+                  <MdOutlineFileDownload size={18} />
+                  <span>{t("download")}</span>
+                </div>
+              </Button>
+            )}
           </div>
-        ))}
-      {imageExtensions.includes(extension) && (
+        )}
+      {!unavailable && imageExtensions.includes(extension) && (
         <>
           <Loader isLoading={isLoading} />
           <img
@@ -113,13 +135,13 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
           />
         </>
       )}
-      {videoExtensions.includes(extension) && (
+      {!unavailable && videoExtensions.includes(extension) && (
         <video src={filePath} className="video-preview" controls autoPlay />
       )}
-      {audioExtensions.includes(extension) && (
+      {!unavailable && audioExtensions.includes(extension) && (
         <audio src={filePath} controls autoPlay className="audio-preview" />
       )}
-      {iFrameExtensions.includes(extension) && (
+      {!unavailable && iFrameExtensions.includes(extension) && (
         <>
           <iframe
             src={filePath}
@@ -130,7 +152,7 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
           ></iframe>
         </>
       )}
-      {embedExtensions.includes(extension) && (
+      {!unavailable && embedExtensions.includes(extension) && (
         <>
           <embed
             src={content}
@@ -143,14 +165,14 @@ const PreviewFileAction = ({ filePreviewPath, filePreviewComponent, fileDownload
           />
         </>
       )}
-      { extension==='md' && content && 
+      { !unavailable && extension==='md' && content &&
         <div style={{ all: "unset", display: "block", overflow:'auto', padding:0, margin:0 }}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>
         </div>
       }
-      { extension==='json' && content && 
+      { !unavailable && extension==='json' && content &&
         <JsonViewer data={JSON.parse(content)} expandLevel={0} style={{ display:"" }}/>
       }
 
