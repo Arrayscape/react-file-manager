@@ -104,7 +104,12 @@ def test_thumbnails(ch):
     for r in withimg:
         check("%s: box is square" % r["name"],
               r["box"]["w"] == r["box"]["h"], str(r["box"]))
-        check("%s: picture fills the box" % r["name"],
+        # The element, not the painted pixels. Whether the host fits the
+        # picture with `contain` or `cover` inside that element is its own
+        # choice, and this cannot tell the two apart -- what the component
+        # owes is a box with a height, so `height: 100%` has something to
+        # resolve against.
+        check("%s: the picture's element fills the box" % r["name"],
               r["img"] == r["box"], "img=%s box=%s" % (r["img"], r["box"]))
         check("%s: the picture is what is painted" % r["name"],
               r["paintedTag"] == "img", "painted=<%s>" % r["paintedTag"])

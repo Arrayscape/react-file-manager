@@ -38,8 +38,12 @@ export const swatch = (hue, label) =>
  */
 export const ROOT = { name: 'Library', isDirectory: false, path: '', class: 'folder' }
 
+// `contain` rather than `cover`, matching how the dashboard uses this: the
+// transforms are newsletter-shaped (320x185) and the box is square, and the
+// whole picture is worth more than a crop of its middle to somebody trying to
+// recognise their own upload.
 const thumbOf = (src) => (
-    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
 )
 
 /** An asset is a folder named after the file, holding original.<ext> and the
