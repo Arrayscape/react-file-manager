@@ -215,10 +215,64 @@ def test_column_menu(ch):
           abs(m["top"] - d["y"]) < 60, "menu top=%d dots y=%d" % (m["top"], d["y"]))
 
 
+# --- the category menu lands under its button ------------------------------
+BUTTON = """(() => {
+  const b = [...document.querySelectorAll('.category-button')]
+    .find(e => e.innerText.trim().startsWith('Usage'));
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  return {x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2),
+          bottom: Math.round(r.bottom), left: Math.round(r.left)};
+})()"""
+
+CATMENU = """(() => {
+  const m = [...document.body.children].find(
+    e => e.classList && e.classList.contains('category-view'));
+  if (!m) return null;
+  const b = m.getBoundingClientRect();
+  return {left: Math.round(b.left), top: Math.round(b.top),
+          right: Math.round(b.right), bottom: Math.round(b.bottom),
+          inBody: !!(m.parentElement && m.parentElement === document.body),
+          insideWindow: b.top >= 0 && b.left >= 0
+                        && b.bottom <= innerHeight && b.right <= innerWidth};
+})()"""
+
+
+def test_category_menu(ch):
+    print("the category menu lands under its button, inside a transformed ancestor")
+    scenario(ch, "category-menu")
+    b = j(ch, BUTTON)
+    if not b:
+        check("found the Usage button", False)
+        return
+    ch.send("Input.dispatchMouseEvent", {"type": "mousePressed", "x": b["x"], "y": b["y"],
+                                        "button": "left", "clickCount": 1, "buttons": 1})
+    ch.send("Input.dispatchMouseEvent", {"type": "mouseReleased", "x": b["x"], "y": b["y"],
+                                         "button": "left", "clickCount": 1, "buttons": 0})
+    time.sleep(0.8)
+    m = j(ch, CATMENU)
+    if not m:
+        check("the category menu opened", False)
+        return
+    check("the category menu opened", True)
+    check("it is portalled into document.body", m["inBody"])
+    check("it is inside the window", m["insideWindow"], str(m))
+    # The wrapper is offset 40px down and 24px across. Placement that depended
+    # on the cascade, or on `fixed` inside that transform, would not track the
+    # button.
+    check("it sits just below the button (within 24px)",
+          abs(m["top"] - b["bottom"]) < 24,
+          "menu top=%d button bottom=%d" % (m["top"], b["bottom"]))
+    check("it is left-aligned with the button (within 24px)",
+          abs(m["left"] - b["left"]) < 24,
+          "menu left=%d button left=%d" % (m["left"], b["left"]))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
-        for t in (test_thumbnails, test_context_menu, test_column_menu):
+        for t in (test_thumbnails, test_context_menu, test_column_menu,
+                  test_category_menu):
             t(ch)
             print()
     finally:

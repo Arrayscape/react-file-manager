@@ -94,6 +94,16 @@ const SCENARIOS = [
         ),
     },
     {
+        key: 'category-menu',
+        title: 'Category menu inside a transformed ancestor',
+        note: 'Click Usage. The menu was told `letf={0}` (sic), so left arrived undefined and only the cascade placed it — and two stylesheets define .category-view. The wrapper carries a transform, as a modal does, which is where this menu will live when the library opens as one.',
+        render: () => (
+            <div style={{ transform: 'translateY(40px) translateX(24px)' }}>
+                <CategoriesScenario />
+            </div>
+        ),
+    },
+    {
         key: 'thumbnails',
         title: 'Per-file thumbnails, and the fallback beside them',
         note: 'crowd-2026.jpg and its transforms carry a picture; terms.pdf and mystery.bin do not and keep their class icon. Switch to grid, where columns do not exist and only this can show a picture.',
