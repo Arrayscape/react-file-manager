@@ -5,10 +5,16 @@
   font-size: $fm-font-size;
 
   .breadcrumb {
-    height: 22px;
+    // A floor, not a ceiling. This row holds the search box, and an input's
+    // height comes from the host: the browser's own default is 13.33px Arial,
+    // and every CSS reset in use -- Bootstrap, Tailwind, normalize -- sets it
+    // to inherit the page instead, which is half again as tall. Pinned to
+    // 22px with `overflow-x: hidden`, the row became a scroll container
+    // shorter than its own contents (one axis hidden computes the other to
+    // auto), and the bottom of the search box was never painted.
     min-height: 22px;
-    max-height: 22px;
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     //border-bottom: 1px solid $border-color;
     padding: 6px 0 6PX 15px;

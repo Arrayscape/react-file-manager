@@ -56,6 +56,40 @@ function CategoriesScenario() {
     return <FileManager {...base} files={files} categories={categories} />
 }
 
+/** A host whose CSS resets the box model and form controls -- nearly all of
+ *  them: Bootstrap, Tailwind, normalize and every variant of those.
+ *
+ *  Two resets, and the bug needs both:
+ *
+ *    - `box-sizing: border-box` on everything. The breadcrumb row asks for
+ *      `height: 22px` with 6px of padding above and below, which is 34px of
+ *      room under the browser's own content-box and 22px under this one. The
+ *      row keeps clipping at the same place either way; there is just 12px
+ *      less of it.
+ *    - `font-size: inherit` on input, because the browser's default for form
+ *      controls is 13.33px Arial and that looks nothing like the rest of the
+ *      page. Our CSS gives the search box a font family and leaves its size to
+ *      the browser, so here the box is as tall as the page's text.
+ *
+ *  A ~27px box in a 22px row, and the row scrolls rather than grows, so the
+ *  bottom of the search box is not painted at all. The other scenarios cannot
+ *  show this: at 13.33px in a 34px row it fits twice over.
+ */
+function HostCssScenario() {
+    return (
+        <>
+            <style>{`
+                #scenario, #scenario *, #scenario *::before, #scenario *::after {
+                    box-sizing: border-box;
+                }
+                #scenario { font-size: 16px; }
+                #scenario input { font-family: inherit; font-size: inherit; line-height: 1.5; }
+            `}</style>
+            <FileManager {...base} initialPath="/Event photos" />
+        </>
+    )
+}
+
 const SCENARIOS = [
     {
         key: 'assets',
@@ -119,6 +153,12 @@ const SCENARIOS = [
                 permissions={{ ...ALL_PERMISSIONS, create: false, upload: false }}
             />
         ),
+    },
+    {
+        key: 'host-css',
+        title: 'The search box under a host that resets form controls',
+        note: 'Bootstrap and friends set font-size: inherit on input. The breadcrumb row was pinned to 22px with overflow-x: hidden -- which makes the other axis scroll -- so a box taller than 22px had its bottom cut off. The default scenarios cannot show this: at the browser default of 13.33px the box fits.',
+        render: () => <HostCssScenario />,
     },
     {
         key: 'selection',

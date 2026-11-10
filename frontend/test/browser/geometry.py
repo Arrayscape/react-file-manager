@@ -268,11 +268,70 @@ def test_category_menu(ch):
           "menu left=%d button left=%d" % (m["left"], b["left"]))
 
 
+# --- the search box is not clipped by the row it sits in -------------------
+# The breadcrumb row was pinned to a 22px height and set `overflow-x: hidden`,
+# which makes the other axis compute to `auto`: the row became a scroll
+# container shorter than the input inside it, so the bottom of the search box
+# was simply not painted. A rect is no use for this -- the input reports its
+# full height whether or not any of it survives the clip -- so the question has
+# to be asked as a hit test, which is also the question a user would ask: can I
+# see the thing.
+SEARCH = """(() => {
+  const input = document.querySelector('.search-input');
+  if (!input) return null;
+  const bar = input.closest('.breadcrumb');
+  if (!bar) return null;
+  const i = input.getBoundingClientRect();
+  const b = bar.getBoundingClientRect();
+  const at = (x, y) => document.elementFromPoint(Math.round(x), Math.round(y));
+  const midX = i.x + i.width / 2;
+  return {
+    height: Math.round(i.height),
+    top: Math.round(i.top), bottom: Math.round(i.bottom),
+    right: Math.round(i.right),
+    barTop: Math.round(b.top), barBottom: Math.round(b.bottom),
+    barRight: Math.round(b.right),
+    overflowing: bar.scrollHeight > bar.clientHeight + 1,
+    topIsInput: at(midX, i.top + 2) === input,
+    bottomIsInput: at(midX, i.bottom - 2) === input,
+  };
+})()"""
+
+
+def test_search_box(ch):
+    print("the search box is wholly visible in the row that holds it")
+    # Both scenarios, because the one that matters is the one the default
+    # cannot show: at the browser's own 13.33px the box fits whatever the row
+    # does, so 'assets' would pass over the bug and 'host-css' is where a real
+    # host -- the dashboard, Bootstrap-reset and 16px -- actually lives.
+    for key in ("assets", "host-css"):
+        scenario(ch, key)
+        s = j(ch, SEARCH)
+        if not s:
+            check("the search box is present (%s)" % key, False)
+            continue
+        check("the search box is present (%s)" % key, True)
+
+        where = "row %d..%d, box %d..%d, %dpx tall" % (
+            s["barTop"], s["barBottom"], s["top"], s["bottom"], s["height"])
+        check("its top edge is painted by the box itself (%s)" % key,
+              s["topIsInput"], where)
+        check("its bottom edge is painted by the box itself (%s)" % key,
+              s["bottomIsInput"], where)
+        check("its row is not scrolled to hold it (%s)" % key,
+              not s["overflowing"], where)
+        check("it sits inside its row vertically (%s)" % key,
+              s["top"] >= s["barTop"] - 1 and s["bottom"] <= s["barBottom"] + 1, where)
+        check("its right edge is inside the row (%s)" % key,
+              s["right"] <= s["barRight"],
+              "box right=%d row right=%d" % (s["right"], s["barRight"]))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
-                  test_category_menu):
+                  test_category_menu, test_search_box):
             t(ch)
             print()
     finally:
