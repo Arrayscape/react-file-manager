@@ -57,14 +57,17 @@ const FileItem = ({
     const [tooltipPosition, setTooltipPosition] = useState(null)
 
     const { activeLayout } = useLayout()
-    const iconSize = activeLayout === 'grid' ? 48 : 20
+    const { options } = useOptions()
+    // A row's icon is a fixed 20px -- it sits in a line of text. A tile's is
+    // whatever the slider in the status bar says, and the tile is sized off
+    // it in the stylesheet.
+    const iconSize = activeLayout === 'grid' ? options.tileSize : 20
     const fileIcons = useFileIcons(iconSize)
     const { setCurrentPath, currentPathFiles, onFolderChange, currentFolder } = useFileNavigation()
     const { setSelectedFiles } = useSelection()
     const { clipBoard, handleCutCopy, setClipBoard, handlePasting } = useClipBoard()
     const dragIconRef = useRef(null)
     const dragIcons = useFileIcons(dragIconSize)
-    const { options } = useOptions()
 
     const isFileMoving =
         clipBoard?.isMoving &&

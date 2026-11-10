@@ -1,7 +1,7 @@
 {
   "name": "@arrayscape/react-file-manager",
   "private": false,
-  "version": "1.5.6-arrayscape.11",
+  "version": "1.5.6-arrayscape.12",
   "type": "module",
   "module": "dist/react-file-manager.es.js",
   "files": [

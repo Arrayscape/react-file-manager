@@ -575,12 +575,101 @@ def test_grid_names(ch):
               "first ends %d, second starts %d" % (a["name"]["r"], b["name"]["l"]))
 
 
+# --- dragging the slider resizes the tiles ---------------------------------
+# The feature is a drag, so this drags. The vitest suite can report what a
+# range reports and check what the component does with it, but whether a
+# pointer dragged across those 90 pixels actually moves the control, and
+# whether the picture and the tile follow it, is a question about a browser.
+TILES = """(() => {
+  const r = (el) => { if (!el) return null; const b = el.getBoundingClientRect();
+    return {l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top),
+            b: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height),
+            c: Math.round(b.left + b.width / 2)}; };
+  const first = document.querySelector('.file-item-container');
+  const sl = document.querySelector('.statusbar input.tile-size');
+  const bar = document.querySelector('.statusbar');
+  const count = document.querySelector('.statusbar .statusbar-text');
+  return {
+    value: sl ? Number(sl.value) : null,
+    slider: r(sl), bar: r(bar), count: r(count),
+    tile: r(first && first.querySelector('.file-item')),
+    icon: r(first && first.querySelector('.file-item > div[style*="flex-shrink"]')),
+    img: r(first && first.querySelector('.file-item img')),
+    explorer: r(document.querySelector('.file-explorer')),
+  };
+})()"""
+
+
+def drag(ch, x0, y0, x1, y1):
+    ch.send("Input.dispatchMouseEvent", {"type": "mousePressed", "x": x0, "y": y0,
+                                         "button": "left", "clickCount": 1, "buttons": 1})
+    time.sleep(0.1)
+    for i in range(1, 9):
+        ch.send("Input.dispatchMouseEvent", {
+            "type": "mouseMoved", "button": "left", "buttons": 1,
+            "x": round(x0 + (x1 - x0) * i / 8.0), "y": round(y0 + (y1 - y0) * i / 8.0)})
+        time.sleep(0.04)
+    ch.send("Input.dispatchMouseEvent", {"type": "mouseReleased", "x": x1, "y": y1,
+                                         "button": "left", "clickCount": 1, "buttons": 0})
+    time.sleep(0.5)
+
+
+def test_tile_slider(ch):
+    print("dragging the slider in the status bar resizes the tiles")
+    scenario(ch, "grid")
+
+    before = j(ch, TILES)
+    if not before["slider"]:
+        check("the grid offers a size slider", False)
+        return
+    check("the grid offers a size slider", True, "at %d" % before["value"])
+    check("it is at the right of the status bar, inside it",
+          before["slider"]["r"] <= before["bar"]["r"]
+          and before["slider"]["l"] > before["count"]["l"],
+          "slider %d..%d, bar %d..%d"
+          % (before["slider"]["l"], before["slider"]["r"],
+             before["bar"]["l"], before["bar"]["r"]))
+
+    s = before["slider"]
+    mid = round((s["t"] + s["b"]) / 2)
+    drag(ch, s["l"] + 4, mid, s["r"] - 1, mid)
+    big = j(ch, TILES)
+
+    check("the drag moved it", big["value"] > before["value"],
+          "%d -> %d" % (before["value"], big["value"]))
+    check("the picture grew with it", big["icon"]["w"] == big["value"],
+          "picture %dpx, slider %d" % (big["icon"]["w"], big["value"]))
+    check("the tile grew with the picture",
+          big["tile"]["w"] > before["tile"]["w"] and big["tile"]["h"] > before["tile"]["h"],
+          "%dx%d -> %dx%d" % (before["tile"]["w"], before["tile"]["h"],
+                              big["tile"]["w"], big["tile"]["h"]))
+    # The point of the whole thing: a bigger tile is a bigger picture, not a
+    # bigger box around the same one.
+    check("the thumbnail is drawn at the new size",
+          big["img"] is not None and big["img"]["w"] >= before["icon"]["w"],
+          "image now %s, picture was %dpx" % (big["img"], before["icon"]["w"]))
+    # The status bar is the bottom of the component whatever is in it.
+    check("the status bar still sits at the bottom",
+          abs(big["bar"]["b"] - big["explorer"]["b"]) <= 3,
+          "bar bottom %d, component bottom %d" % (big["bar"]["b"], big["explorer"]["b"]))
+
+    drag(ch, s["r"] - 1, mid, s["l"] + 1, mid)
+    small = j(ch, TILES)
+    check("and dragging back shrinks them again",
+          small["value"] < big["value"] and small["tile"]["w"] < big["tile"]["w"],
+          "%d -> %d, tile %dpx -> %dpx"
+          % (big["value"], small["value"], big["tile"]["w"], small["tile"]["w"]))
+    check("it stops at the bottom of its range", small["value"] >= 32,
+          "ended at %d" % small["value"])
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
                   test_category_menu, test_search_box, test_chrome_fits,
-                  test_type_matches, test_nav_pane_toggle, test_grid_names):
+                  test_type_matches, test_nav_pane_toggle, test_grid_names,
+                  test_tile_slider):
             t(ch)
             print()
     finally:

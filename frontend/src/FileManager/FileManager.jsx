@@ -124,6 +124,10 @@ const FileManagerBody = ({ props, innerRef }) => {
         '--file-manager-font-family': fontFamily,
         '--file-manager-font-size': fontSize,
         '--file-manager-primary-color': primaryColor,
+        // A tile's picture is this across, and the tile is sized off it. The
+        // stylesheet reads it so that moving the slider is one style change
+        // on one element rather than a re-render of every tile.
+        '--file-manager-tile-size': `${options.tileSize}px`,
         height,
         width
     }
@@ -333,7 +337,10 @@ const FileManagerBody = ({ props, innerRef }) => {
 
 const FileManager = forwardRef((props, ref) => {
     return (
-        <OptionsProvider folderTree={props.defaultNavExpanded ?? true}>
+        <OptionsProvider
+            folderTree={props.defaultNavExpanded ?? true}
+            tileSize={props.defaultTileSize}
+        >
             <TranslationProvider language={props.language || 'en-US'}>
                 <FilesProvider filesData={props.files} onError={props.onError}>
                     {/* Eliminamos el callback del Provider para dispararlo manualmente en el Body */}
@@ -405,6 +412,9 @@ FileManager.propTypes = {
     }),
     collapsibleNav: PropTypes.bool,
     defaultNavExpanded: PropTypes.bool,
+    // The edge of a tile's picture in the grid, in CSS pixels, before anyone
+    // has touched the slider in the status bar. Clamped to TILE_MIN..TILE_MAX.
+    defaultTileSize: PropTypes.number,
     className: PropTypes.string,
     style: PropTypes.object,
     formatDate: PropTypes.func,

@@ -143,6 +143,12 @@ function HostCssScenario() {
  *  81px includes 14px of padding, leaving 67px for a 48px icon, an 8px gap
  *  and a line of text, so the name is pushed out of the bottom of its own
  *  tile and into the row beneath.
+ *
+ *  It is also where the size slider lives, and the host CSS here is what that
+ *  slider has to survive: the rule stretching a bare range to the full width
+ *  of its container is unscoped on purpose, because a host's is -- Bootstrap
+ *  and friends write `[type="range"]`, not `#something [type="range"]`, and a
+ *  slider that obeyed it would push the item count out of the bar.
  */
 function GridScenario() {
     return (
@@ -153,6 +159,7 @@ function GridScenario() {
                 }
                 #scenario { font-size: 16px; }
                 #scenario input { font-family: inherit; font-size: inherit; line-height: 1.5; }
+                input[type="range"] { width: 100%; }
             `}</style>
             <FileManager {...base} files={longNames} layout="grid" showBreadcrumb />
         </>
@@ -231,8 +238,8 @@ const SCENARIOS = [
     },
     {
         key: 'grid',
-        title: 'Grid, with the names a real library has',
-        note: 'Each name should stay inside its own tile and end in an ellipsis. The tile is 138x81 by hand: the name is centred, so it sized to its content and hung off both sides until two names overlapped, and under a host that sets box-sizing: border-box the counted height left no room for the line of text at all.',
+        title: 'Grid: tile size, and the names a real library has',
+        note: 'Drag the slider at the right of the status bar, the way the Finder\'s works: the picture and the tile follow it, the item count keeps its place, and the bar stays at the bottom of the component. Each name should stay inside its own tile and end in an ellipsis at every size. The tile was 138x81 by hand: the name is centred, so it sized to its content and hung off both sides until two names overlapped, and under a host that sets box-sizing: border-box the counted height left no room for the line of text at all.',
         render: () => <GridScenario />,
     },
     {

@@ -38,6 +38,7 @@
   "view": "View",
   "grid": "Grid",
   "list": "List",
+  "tileSize": "Icon size",
   "open": "Open",
   "nothingHereYet": "Nothing here yet",
   "name": "Name",

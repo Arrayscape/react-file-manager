@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import FileItem from './FileItem'
 import { useFileNavigation } from '../../contexts/FileNavigationContext'
 import { useLayout } from '../../contexts/LayoutContext'
-import { useOptions } from '../../contexts/OptionsContext'
+import { useOptions, TILE_MIN, TILE_MAX, TILE_STEP } from '../../contexts/OptionsContext'
 import ContextMenu from '../../components/ContextMenu/ContextMenu'
 import { useDetectOutsideClick } from '../../hooks/useDetectOutsideClick'
 import useFileList from './useFileList'
@@ -47,7 +47,7 @@ const FileList = ({
     const [columnSelectorPos, setColumnSelectorPos] = useState(null)
     const { activeLayout, setActiveLayout } = useLayout()
     const t = useTranslation()
-    const { options } = useOptions()
+    const { options, setTileSize } = useOptions()
     if (currentFolder && currentFolder.children) {
         space = currentFolder.children
     }
@@ -126,7 +126,29 @@ const FileList = ({
         }
 
         return (
-            <div className='statusbar' style={{...(!options.folderTree? {borderBottomLeftRadius: '8px'} : {})}}>{text}</div>
+            <div className='statusbar' style={{...(!options.folderTree? {borderBottomLeftRadius: '8px'} : {})}}>
+                <span className='statusbar-text'>{text}</span>
+                {/* Only the grid has a tile to resize, and the slider sits at
+                  * the right of the bar, where the Finder keeps it. */}
+                {activeLayout === 'grid' && (
+                    <input
+                        type='range'
+                        className='tile-size'
+                        min={TILE_MIN}
+                        max={TILE_MAX}
+                        step={TILE_STEP}
+                        value={options.tileSize}
+                        title={t('tileSize')}
+                        aria-label={t('tileSize')}
+                        onChange={(e) => setTileSize(Number(e.target.value))}
+                        // The bar is part of the chrome, not the listing: a
+                        // drag across it is not a drag across files, and a
+                        // click on it does not clear the selection.
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    />
+                )}
+            </div>
         )
     }
 

@@ -706,6 +706,7 @@ spaces.set('mySpace', {
 | `className` | string | `''` | CSS class applied to the root element. |
 | `collapsibleNav` | boolean | `false` | Show a toggle to expand/collapse the navigation pane. |
 | `defaultNavExpanded` | boolean | `true` | Initial expanded state of the navigation pane. |
+| `defaultTileSize` | number | `48` | Starting size of a grid tile's picture, in CSS pixels. The slider at the right of the status bar moves it between 32 and 160; the tile is sized off it. Clamped to that range. |
 | `enableFilePreview` | boolean | `true` | Enable the built-in file previewer. |
 | `fileDownloadConfig` | `{ url: string; headers?: object }` | — | Download URL prefix and optional HTTP headers. Also used for file preview. |
 | `filePreviewComponent` | `(file: IFileObject) => ReactNode` | — | Custom file preview renderer. Overrides the built-in previewer. |

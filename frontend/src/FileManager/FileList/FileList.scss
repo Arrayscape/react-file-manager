@@ -162,13 +162,19 @@
 // the 138x81 in that block is the grid's own size wearing a default's clothes,
 // and `.files.list` has been quietly overriding both of them all along.
 .files.grid {
+  // The picture's edge, which the slider in the status bar moves. Everything
+  // about a tile is this plus a constant: 48 + 90 and 48 + 33 are the 138x81
+  // the tile has always been, so at the default nothing moves.
+  --fm-tile: var(--file-manager-tile-size, 48px);
+
   .file-item {
-    // Room for the icon and two lines, and free to be taller. A counted
+    width: calc(var(--fm-tile) + 90px);
+    // Room for the picture and two lines, and free to be taller. A counted
     // height spills whatever does not fit the count, and under a host that
     // sets `box-sizing: border-box` -- Bootstrap, Tailwind, normalize -- the
     // count is 14px of padding short before the name is measured at all.
     height: auto;
-    min-height: 81px;
+    min-height: calc(var(--fm-tile) + 33px);
   }
 
   .file-name {
@@ -362,9 +368,36 @@
 .statusbar {
   flex: 0 0 auto;
   padding-left: 4px;
+  padding-right: 6px;
   border-bottom-right-radius: 8px;
   font-size: 12px;
-  height: 20px;
+  // A minimum, not a height: the slider is a form control, and a host that
+  // sets `font-size: inherit` on one makes it taller than any number counted
+  // here. The column above gives the bar whatever it asks for.
+  min-height: 20px;
   display: flex;
   align-items: center;
+  gap: 8px;
+
+  .statusbar-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Sized here rather than left to the browser, because a host's reset decides
+  // otherwise: Bootstrap gives a bare range `width: 100%`, which would push
+  // the count out of the bar entirely.
+  .tile-size {
+    flex: 0 0 auto;
+    width: 90px;
+    max-width: 40%;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--file-manager-primary-color);
+  }
 }
