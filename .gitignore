@@ -28,3 +28,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# python bytecode from the browser tests
+__pycache__/
+*.pyc
