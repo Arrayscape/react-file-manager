@@ -200,6 +200,12 @@ const SCENARIOS = [
         render: () => <HostCssScenario />,
     },
     {
+        key: 'nav-pane',
+        title: 'A tree the host asked to start collapsed',
+        note: 'Open Options. "Folder tree" should be unchecked, agreeing with the pane, and one click should show it -- whether the pane was open used to be recorded twice, so the menu claimed the tree was on while it was not, and the menu\'s first click moved nothing. Once shown, the tree is rooted at the top level, named and marked the way the trail names and marks it.',
+        render: () => <FileManager {...base} collapsibleNav defaultNavExpanded={false} showBreadcrumb />,
+    },
+    {
         key: 'selection',
         title: 'Cmd-click extends a selection',
         note: 'On macOS the add-to-selection modifier is Cmd. Reading ctrlKey alone left Mac users no way to extend a selection at all.',

@@ -5,7 +5,7 @@ import { useLayout } from "../../contexts/LayoutContext"
 import { useTranslation } from "../../contexts/TranslationProvider"
 import { useOptions } from '../../contexts/OptionsContext'
 
-const ViewOptions = ({ showBreadcrumb, setShowViewOptionsMenu, onLayoutChange, onNavigationPaneChange, onSelectChange }) => {
+const ViewOptions = ({ showBreadcrumb, setShowViewOptionsMenu, onLayoutChange, onSelectChange }) => {
     const viewOptionsRef = useDetectOutsideClick(() => {
         setShowViewOptionsMenu(false)
     })
@@ -91,7 +91,11 @@ const ViewOptions = ({ showBreadcrumb, setShowViewOptionsMenu, onLayoutChange, o
                 toggleCheckBox()
                 break
             case 'foldertree':
-                onNavigationPaneChange(!options.folderTree)
+                // One call, because there is one state. This used to set the
+                // pane and the check separately, and the pane was told the
+                // value the check was already showing -- so the first click
+                // moved nothing, and the second one did what the first was
+                // asked to.
                 toggleFolderTree()
                 break
             case 'selectall':

@@ -430,12 +430,94 @@ def test_type_matches(ch):
           "tree %s, row %s" % (t["treeFamily"], t["rowFamily"]))
 
 
+# --- one click of the menu shows the tree ----------------------------------
+# Whether the pane was open was recorded twice: FileManager's own state drew
+# the pane, OptionsContext's `folderTree` drew the check in the Options menu,
+# and only the first was seeded from `defaultNavExpanded`. A host asking for a
+# collapsed pane therefore got a menu claiming the tree was on, and the menu's
+# first click handed the pane the value the check was already showing -- so
+# nothing moved. Off, then on, to get on.
+#
+# `.navigation-pane` is display:none when closed, which jsdom will not
+# compute, so the vitest suite can only read the class name. This asks what is
+# actually painted where the tree should be.
+CENTRE = """(() => {
+  const el = document.querySelector(%s);
+  if (!el) return null;
+  const b = el.getBoundingClientRect();
+  const x = Math.round(b.left + b.width / 2), y = Math.round(b.top + b.height / 2);
+  const hit = b.width && b.height ? document.elementFromPoint(x, y) : null;
+  return {x: x, y: y, w: Math.round(b.width), h: Math.round(b.height),
+          text: el.innerText.trim().split('\\n')[0],
+          painted: hit ? el.contains(hit) || hit.contains(el) : false};
+})()"""
+
+TREE_ITEM = """(() => {
+  const li = [...document.querySelectorAll('li[role="menuitem"]')]
+    .find(l => l.textContent.includes('Folder tree'));
+  if (!li) return null;
+  const b = li.getBoundingClientRect();
+  return {x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2),
+          checked: li.querySelector('span').children.length > 0};
+})()"""
+
+
+def centre(ch, selector):
+    return j(ch, CENTRE % json.dumps(selector))
+
+
+def left_click(ch, x, y):
+    for t, buttons in (("mousePressed", 1), ("mouseReleased", 0)):
+        ch.send("Input.dispatchMouseEvent", {"type": t, "x": x, "y": y, "button": "left",
+                                             "clickCount": 1, "buttons": buttons})
+    time.sleep(0.6)
+
+
+def test_nav_pane_toggle(ch):
+    print("one click of Options shows a tree the host asked to start collapsed")
+    scenario(ch, "nav-pane")
+
+    pane = centre(ch, ".navigation-pane")
+    check("the pane starts hidden", bool(pane) and not pane["painted"],
+          "%dx%d" % (pane["w"], pane["h"]) if pane else "no pane")
+
+    opts = centre(ch, "button[title='Options']")
+    if not opts:
+        check("found the Options button", False)
+        return
+    left_click(ch, opts["x"], opts["y"])
+
+    item = j(ch, TREE_ITEM)
+    if not item:
+        check("the Options menu lists Folder tree", False)
+        return
+    check("the Options menu lists Folder tree", True)
+    check("and does not claim the tree is already on", not item["checked"])
+
+    left_click(ch, item["x"], item["y"])
+
+    root = centre(ch, ".sb-folders-list > .sb-folders-list-item")
+    if not root:
+        check("the tree is drawn after one click", False)
+        return
+    check("the tree is drawn after one click", root["painted"],
+          "root %r, %dx%d" % (root["text"], root["w"], root["h"]))
+    # The root is the top level itself, so the folders hang inside it rather
+    # than sitting loose beside it -- which is what the trail already said.
+    check("its root is the top level, named as the trail names it",
+          root["text"] == "Library", "root label %r" % root["text"])
+    inside = centre(ch, ".folder-collapsible .sb-folder-name")
+    check("the folders are drawn inside that root",
+          bool(inside) and inside["painted"],
+          "first child %r" % (inside["text"] if inside else None))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
                   test_category_menu, test_search_box, test_chrome_fits,
-                  test_type_matches):
+                  test_type_matches, test_nav_pane_toggle):
             t(ch)
             print()
     finally:

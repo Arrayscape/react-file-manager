@@ -116,7 +116,7 @@ const BreadCrumb = ({ collapsibleNav, isNavigationPaneOpen, onNavigationPaneChan
                     >
                         <span
                           className='folder-name folder-name-btn'
-                          onClick={() => onNavigationPaneChange((prev) => !prev)}
+                          onClick={() => onNavigationPaneChange()}
                         >
                           {isNavigationPaneOpen ? (
                               <TbLayoutSidebarLeftCollapseFilled />

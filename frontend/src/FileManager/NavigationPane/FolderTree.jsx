@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Collapse from "../../components/Collapse/Collapse";
 import { FaRegFolder, FaRegFolderOpen } from "react-icons/fa";
-import { MdKeyboardArrowRight } from "react-icons/md";
+import { MdHome, MdKeyboardArrowRight } from "react-icons/md";
 import { useFileNavigation } from "../../contexts/FileNavigationContext";
 
 const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
@@ -14,6 +14,21 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
   // file list already shows. This pane showed the id, so the same folder was
   // called two different things on one screen.
   const label = folder.displayName || folder.name
+
+  // A host's own icon for this class if it registered one; the home mark for
+  // the top level, which is what the trail marks it with; a folder otherwise.
+  const mark = (open) => {
+    const own = folder.class && icons && icons.get(folder.class)
+    if (own) return (open ? own.open : own.closed) || own.default
+    if (folder.isRoot) {
+      return <MdHome size={18} className={open ? "folder-open-icon" : "folder-close-icon"} />
+    }
+    return open ? (
+      <FaRegFolderOpen size={20} className="folder-open-icon" />
+    ) : (
+      <FaRegFolder size={17} className="folder-close-icon" />
+    )
+  }
 
   const handleFolderSwitch = () => {
     setIsActive(true)
@@ -46,20 +61,7 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
             <MdKeyboardArrowRight size={20} className={`folder-icon-default ${isOpen ? "folder-rotate-down" : ""}`} />
           </span>
           <div className="sb-folder-details">
-            {isOpen ? (
-                folder.class && icons && icons.get(folder.class) ?
-                  icons.get(folder.class).open || icons.get(folder.class).default
-                  :
-                  <FaRegFolderOpen size={20} className="folder-open-icon" />
-              )
-              :
-              (
-                folder.class && icons && icons.get(folder.class)?
-                  icons.get(folder.class).closed || icons.get(folder.class).default
-                  :
-                  <FaRegFolder size={17} className="folder-close-icon" />
-              )
-            }
+            {mark(isOpen)}
             <span className="sb-folder-name" title={label} style={{marginLeft:'2px'}}>
               {label}
             </span>
@@ -80,19 +82,7 @@ const FolderTree = ({ folder, onFileOpen, icons, depth }) => {
       <div onClick={handleFolderSwitch} className={`sb-folders-list-item ${isActive ? "active-list-item" : ""}`} >
         <span className="non-expanable"></span>
         <div className="sb-folder-details">
-          {isActive ? (
-              folder.class && icons && icons.get(folder.class)?
-                icons.get(folder.class).open || icons.get(folder.class).default
-                :
-                <FaRegFolderOpen size={20} className="folder-open-icon" />
-          )
-          :
-          (
-              folder.class && icons && icons.get(folder.class)?
-                icons.get(folder.class).closed || icons.get(folder.class).default
-                :
-                <FaRegFolder size={17} className="folder-close-icon" />
-          )}
+          {mark(isActive)}
           <span className="sb-folder-name" title={label} style={{marginLeft:'2px'}}>
             {label}
           </span>

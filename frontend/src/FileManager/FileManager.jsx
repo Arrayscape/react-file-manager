@@ -5,7 +5,7 @@ import NavigationPane from './NavigationPane/NavigationPane'
 import BreadCrumb from './BreadCrumb/BreadCrumb'
 import FileList from './FileList/FileList'
 import Actions from './Actions/Actions'
-import { OptionsProvider } from '../contexts/OptionsContext'
+import { OptionsProvider, useOptions } from '../contexts/OptionsContext'
 import { FilesProvider } from '../contexts/FilesContext'
 import { FileNavigationProvider, useFileNavigation } from '../contexts/FileNavigationContext'
 import { SelectionProvider } from '../contexts/SelectionContext'
@@ -81,7 +81,6 @@ const FileManagerBody = ({ props, innerRef }) => {
         language = 'en-US',
         permissions: userPermissions = {},
         collapsibleNav = false,
-        defaultNavExpanded = true,
         className = '',
         style = {},
         searchMode = 'auto',
@@ -101,8 +100,13 @@ const FileManagerBody = ({ props, innerRef }) => {
     const [srchText, setSrchText] = useState('')
     const [srchRegex, setSrchRegex] = useState(false)
     const [srchCasing, setSrchCasing] = useState(false)
-    const [isNavigationPaneOpen, onNavigationPaneChange] = useState(defaultNavExpanded)
     const [isLocked, setIsLocked] = useState(false)
+    // Whether the navigation pane is showing lives in the options, beside the
+    // other three things the view menu turns on and off, because the menu's
+    // check and the pane have to be the same fact. `defaultNavExpanded` seeds
+    // it where the provider is mounted.
+    const { options, toggleFolderTree } = useOptions()
+    const isNavigationPaneOpen = options.folderTree
     const [headersWidth, setHeadersWidth] = useState({})
     const [columnWidths, setColumnWidths] = useState({})
 
@@ -222,7 +226,6 @@ const FileManagerBody = ({ props, innerRef }) => {
                             onRefresh={onRefresh}
                             triggerAction={triggerAction}
                             permissions={permissions}
-                            onNavigationPaneChange={onNavigationPaneChange}
                             spaces={spaces}
                             rightItems={rightItems}
                             searchMode={searchMode}
@@ -263,7 +266,7 @@ const FileManagerBody = ({ props, innerRef }) => {
                                 <BreadCrumb
                                     collapsibleNav={collapsibleNav}
                                     isNavigationPaneOpen={isNavigationPaneOpen}
-                                    onNavigationPaneChange={onNavigationPaneChange}
+                                    onNavigationPaneChange={toggleFolderTree}
                                     tirggerAction={triggerAction}
                                     onSearchFilterChange={onSearchFilterChange}
                                     searchMode={searchMode}
@@ -330,7 +333,7 @@ const FileManagerBody = ({ props, innerRef }) => {
 
 const FileManager = forwardRef((props, ref) => {
     return (
-        <OptionsProvider>
+        <OptionsProvider folderTree={props.defaultNavExpanded ?? true}>
             <TranslationProvider language={props.language || 'en-US'}>
                 <FilesProvider filesData={props.files} onError={props.onError}>
                     {/* Eliminamos el callback del Provider para dispararlo manualmente en el Body */}

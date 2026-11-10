@@ -13,7 +13,7 @@ import { ViewOptions } from './ViewOptions'
 import './Toolbar.scss'
 import { applyFilters } from '../../utils/filters'
 
-const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavigationPaneChange, spaces, rightItems, searchText, searchRegex, searchCasing, categories,showRefresh, showBreadcrumb, minFileActionsLevel }) => {
+const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, spaces, rightItems, searchText, searchRegex, searchCasing, categories,showRefresh, showBreadcrumb, minFileActionsLevel }) => {
     const [ viewOptionsMenuVivible, setViewOptionsMenuVisible ] = useState(false)
     const [ , setTick ] = useState(0)
     const { currentFolder, currentPathFiles, currentOwnLayoutPath } = useFileNavigation()
@@ -256,7 +256,6 @@ const Toolbar = ({ onLayoutChange, onRefresh, triggerAction, permissions, onNavi
                     showBreadcrumb={showBreadcrumb}
                     setShowViewOptionsMenu={setViewOptionsMenuVisible}
                     onLayoutChange={onLayoutChange}
-                    onNavigationPaneChange={onNavigationPaneChange}
                     onSelectChange={onSelectChange}
                 />
             )}
