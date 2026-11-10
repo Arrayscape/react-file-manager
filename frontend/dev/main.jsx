@@ -16,7 +16,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { FileManager } from '../src/index.js'
-import { assets, ROOT, SPACES, ICONS, ALL_PERMISSIONS, swatch } from './fixtures.jsx'
+import { assets, ROOT, SPACES, ASSET_SPACE, TRANSFORM_SPACE, ICONS, ALL_PERMISSIONS, swatch } from './fixtures.jsx'
 
 const base = {
     files: assets,
@@ -74,8 +74,40 @@ function CategoriesScenario() {
  *  A ~27px box in a 22px row, and the row scrolls rather than grows, so the
  *  bottom of the search box is not painted at all. The other scenarios cannot
  *  show this: at 13.33px in a 34px row it fits twice over.
+ *
+ *  It carries the rest of a real host's chrome for the same reason -- a
+ *  toolbar with items in it, the trail turned on, a category filter and a
+ *  status bar. Every one of those is a box whose height the layout used to
+ *  count by hand, and a count is only ever right for the page it was counted
+ *  on.
  */
+/** A toolbar to measure. The shipped fixtures carry no leftItems, so without
+ *  these the toolbar is empty and says nothing about how it lays out. */
+const HOST_SPACES = new Map([
+    ['filedata', { ...ASSET_SPACE, leftItems: [{ name: 'upload', text: 'Upload', onClick: () => {} }] }],
+    ['folder', { ...ASSET_SPACE, leftItems: [{ name: 'upload', text: 'Upload', onClick: () => {} }] }],
+    ['asset', { ...ASSET_SPACE, leftItems: [{ name: 'download', text: 'Download', onClick: () => {} }] }],
+    ['transform', TRANSFORM_SPACE],
+])
+
 function HostCssScenario() {
+    const [selected, setSelected] = React.useState([])
+    const categories = [
+        {
+            key: 'usage',
+            text: 'Usage',
+            all: [
+                { key: 'used', text: 'Used' },
+                { key: 'unused', text: 'Unused' },
+            ],
+            selected,
+            onCategoryValuesChange: (_key, _value, next) => setSelected(next),
+            onCategoryFilter: (_key, f) => selected.includes(f.data?.usage ?? 'unused'),
+            isFilterActive: () => selected.length > 0,
+        },
+    ]
+    const files = assets.map((f) => ({ ...f, categories: ['usage'] }))
+
     return (
         <>
             <style>{`
@@ -85,7 +117,14 @@ function HostCssScenario() {
                 #scenario { font-size: 16px; }
                 #scenario input { font-family: inherit; font-size: inherit; line-height: 1.5; }
             `}</style>
-            <FileManager {...base} initialPath="/Event photos" />
+            <FileManager
+                {...base}
+                files={files}
+                categories={categories}
+                spaces={HOST_SPACES}
+                initialPath="/Event photos"
+                showBreadcrumb
+            />
         </>
     )
 }

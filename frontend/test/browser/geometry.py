@@ -327,11 +327,84 @@ def test_search_box(ch):
               "box right=%d row right=%d" % (s["right"], s["barRight"]))
 
 
+# --- the chrome fits the box it is drawn in -------------------------------
+# Same root as the search box, in two more places. The component's layout is
+# arithmetic over fixed heights -- a 35px toolbar, `calc(100% - 46px)` for the
+# middle, a 20px status bar -- and that arithmetic is written for the browser's
+# own content-box. Under `box-sizing: border-box`, which every CSS reset in use
+# turns on globally, each of those boxes keeps its padding inside the height
+# instead of adding it, so the sums no longer come out: toolbar items overflow
+# a box too short for them, and the status bar is pushed past the bottom of the
+# component and out into the page.
+CHROME = """(() => {
+  const explorer = document.querySelector('.file-explorer');
+  const toolbar = document.querySelector('.toolbar');
+  const status = document.querySelector('.statusbar');
+  if (!explorer || !toolbar) return null;
+  const r = (el) => { const b = el.getBoundingClientRect();
+    return {top: Math.round(b.top), bottom: Math.round(b.bottom),
+            left: Math.round(b.left), right: Math.round(b.right),
+            height: Math.round(b.height)}; };
+  const items = [...toolbar.querySelectorAll('.item-action')].map((el) => {
+    const b = el.getBoundingClientRect();
+    return {text: el.textContent.trim(), top: Math.round(b.top),
+            bottom: Math.round(b.bottom), centre: Math.round(b.top + b.height / 2)};
+  });
+  return {
+    explorer: r(explorer), toolbar: r(toolbar),
+    status: status ? r(status) : null,
+    statusText: status ? status.textContent.trim() : '',
+    items,
+    toolbarCentre: Math.round(toolbar.getBoundingClientRect().top
+                              + toolbar.getBoundingClientRect().height / 2),
+  };
+})()"""
+
+
+def test_chrome_fits(ch):
+    print("the toolbar and status bar fit the component, under a host's CSS")
+    scenario(ch, "host-css")
+
+    c = j(ch, CHROME)
+    if not c or not c["items"]:
+        check("the toolbar has items to measure", False)
+        return
+    check("the toolbar has items to measure", True)
+
+    for it in c["items"]:
+        where = "item %d..%d, toolbar %d..%d" % (
+            it["top"], it["bottom"], c["toolbar"]["top"], c["toolbar"]["bottom"])
+        check("'%s' is inside the toolbar" % it["text"],
+              it["top"] >= c["toolbar"]["top"] - 1
+              and it["bottom"] <= c["toolbar"]["bottom"] + 1, where)
+        check("'%s' is vertically centred in it" % it["text"],
+              abs(it["centre"] - c["toolbarCentre"]) <= 2,
+              "item centre %d, toolbar centre %d" % (it["centre"], c["toolbarCentre"]))
+
+    if not c["status"]:
+        check("the status bar is present", False)
+        return
+    check("the status bar is present", True)
+    check("the status bar is inside the component",
+          c["status"]["bottom"] <= c["explorer"]["bottom"] + 1,
+          "status bottom %d, component bottom %d (%r)"
+          % (c["status"]["bottom"], c["explorer"]["bottom"], c["statusText"]))
+    # Flush with the bottom, not merely inside it. Both failures come from the
+    # same hand-counted chrome: count short and the bar is pushed out into the
+    # page under the component's own rounded corner, count long and it floats
+    # with a gap beneath it. Only one number is right, and it is the one the
+    # browser works out.
+    check("the status bar sits at the bottom of it",
+          abs(c["status"]["bottom"] - c["explorer"]["bottom"]) <= 3,
+          "status bottom %d, component bottom %d"
+          % (c["status"]["bottom"], c["explorer"]["bottom"]))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
-                  test_category_menu, test_search_box):
+                  test_category_menu, test_search_box, test_chrome_fits):
             t(ch)
             print()
     finally:

@@ -142,7 +142,7 @@ const FileList = ({
         // render standard layout
         return (<>
                 {activeLayout === 'list' && (
-                    <div className='files list' style={{paddingRight:0}}>
+                    <div className='files list header-row' style={{paddingRight:0}}>
                         <FilesHeader
                             fontFamily={fontFamily}
                             headersWidth={headersWidth}
@@ -189,10 +189,23 @@ const FileList = ({
                     document.body
                 )}
 
+            {/* No height here, on purpose.
+              *
+              * It used to be `calc(100% - 85px)` in list layout, where 85 is
+              * the breadcrumb plus the column header plus the status bar,
+              * counted by hand. Each of those is a box whose real height
+              * depends on the host -- its font, and whether its CSS reset puts
+              * padding inside the height or outside it. Count short and the
+              * status bar is pushed out of the component and into the page;
+              * count long and there is a gap above it.
+              *
+              * The column is a flex column now and this is the part that takes
+              * what is left: the same arithmetic, done by the browser against
+              * the heights things actually have. */}
             <div
                 ref={filesViewRef}
                 className={`files ${activeLayout}`}
-                style={{height: (options.statusBar? `calc(100% - (${activeLayout==='list'?85:56}px))`:`calc(100% - (${activeLayout==='list'?64:35}px))`), borderBottom: (options.statusBar?1:0)}}
+                style={{borderBottom: (options.statusBar?1:0)}}
                 onContextMenu={handleContextMenu}
                 onClick={unselectFiles}
             >

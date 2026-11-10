@@ -2,6 +2,10 @@
 
 .files {
   position: relative;
+  // The part of the column that takes what is left, so the status bar below
+  // stays inside the component whatever the chrome above it measures.
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   align-content: flex-start;
   flex-wrap: wrap;
@@ -133,6 +137,13 @@
   .file-moving {
     opacity: 0.5;
   }
+}
+
+// The column header shares the `.files` class with the rows area, and is
+// chrome rather than the part that takes the leftover space.
+.files.header-row {
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .files.list {
@@ -309,6 +320,7 @@
 }
 
 .statusbar {
+  flex: 0 0 auto;
   padding-left: 4px;
   border-bottom-right-radius: 8px;
   font-size: 12px;

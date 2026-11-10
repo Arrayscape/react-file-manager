@@ -33,6 +33,11 @@ svg {
   min-height: 400px;
   height: 100%;
   width: 100%;
+  // A column of three: toolbar, the middle, status bar. Laid out rather than
+  // counted, so no part of it has to know how tall the others came out under
+  // the host's font and box model.
+  display: flex;
+  flex-direction: column;
   font-family: var(--file-manager-font-family);
   border: 1px solid $border-color;
   border-radius: 8px;
@@ -99,7 +104,13 @@ svg {
 
   .files-container {
     display: flex;
-    height: calc(100% - 46px); // Toolbar total height = baseHeight: 35px, padding top + bottom: 10px, border: 1px.
+    // Whatever the toolbar leaves. This was `calc(100% - 46px)`, with the 46
+    // spelled out as "35px of toolbar, 10px of padding, 1px of border" -- true
+    // only while the host's reset keeps padding outside the height, which
+    // `box-sizing: border-box` does not, and only while nothing in the toolbar
+    // is taller than the font it was measured against.
+    flex: 1 1 auto;
+    min-height: 0; // so its children scroll rather than push it open
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
 
@@ -140,6 +151,12 @@ svg {
     .folders-preview {
       z-index: 2;
       background-color: white;
+      // The inner column: breadcrumb, column header, rows, status bar. The
+      // rows take what is left (see FileList), which is what keeps the status
+      // bar inside the component however tall the breadcrumb turns out.
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
       padding-right: 0px;
       padding-left: 0px;
       border-bottom-right-radius: 8px;

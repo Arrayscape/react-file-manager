@@ -1,18 +1,23 @@
 @import "../../styles/variables";
 
 .toolbar {
-  height: 35px;
+  // A floor, not a ceiling, with the items centred in whatever height
+  // results. Pinned to 35px, a host whose reset puts padding inside the
+  // height left 25px of room for buttons 33px tall: they overflowed their own
+  // bar and sat low in it, text and icons riding its bottom edge.
   min-height: 35px;
-  max-height: 35px;
+  flex: 0 0 auto;
   border-bottom: 1px solid $border-color;
   padding: 5px 10px;
 
   .file-action-container {
     display: flex;
+    align-items: center;
     justify-content: space-between;
 
     >div {
       display: flex;
+      align-items: center;
     }
 
     .file-action {

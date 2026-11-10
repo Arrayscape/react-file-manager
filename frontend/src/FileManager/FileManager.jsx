@@ -75,6 +75,9 @@ const FileManagerBody = ({ props, innerRef }) => {
         filePreviewComponent,
         primaryColor = '#6155b4',
         fontFamily = 'Nunito Sans, sans-serif',
+        // Undefined by default, so the stylesheet's own 16px stands. A host
+        // that passes one gets the whole component on its own scale.
+        fontSize,
         language = 'en-US',
         permissions: userPermissions = {},
         collapsibleNav = false,
@@ -115,6 +118,7 @@ const FileManagerBody = ({ props, innerRef }) => {
 
     const customStyles = {
         '--file-manager-font-family': fontFamily,
+        '--file-manager-font-size': fontSize,
         '--file-manager-primary-color': primaryColor,
         height,
         width
@@ -385,6 +389,7 @@ FileManager.propTypes = {
     filePreviewComponent: PropTypes.func,
     primaryColor: PropTypes.string,
     fontFamily: PropTypes.string,
+    fontSize: PropTypes.string,
     language: PropTypes.string,
     permissions: PropTypes.shape({
         create: PropTypes.bool,

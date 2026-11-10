@@ -1,7 +1,10 @@
 // App Colors
 $border-color: #cfcfcf;
 $item-hover-color: rgb(0, 0, 0, 0.05);
-$fm-font-size: 16px;
+// Overridable by the host, because a component that cannot take the page's
+// font is a component that always looks borrowed. The default is what it has
+// always been, so nothing changes for a host that sets nothing.
+$fm-font-size: var(--file-manager-font-size, 16px);
 //
 
 // Resuable Styles
