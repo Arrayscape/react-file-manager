@@ -274,10 +274,32 @@ const FileItem = ({
                     alignItems: 'center', 
                     justifyContent: 'center',
                     flexShrink: 0,      // force fixed size icon
-                    width: iconSize,    
-                    minWidth: iconSize
+                    width: iconSize,
+                    minWidth: iconSize,
+                    // Height as well as width, so the box is a known square.
+                    // It only ever held an svg sized to `iconSize`, so this
+                    // changes nothing for icons -- but a thumbnail is an image
+                    // of some other shape, and in a box with no height of its
+                    // own `height: 100%` resolves against the content, which
+                    // is the image itself. A 2:1 picture then rendered half as
+                    // tall as the row's icon instead of filling it.
+                    height: iconSize
                 }}>
-                    { file.isDirectory ?
+                    {/* A picture of this particular file outranks an icon for
+                      * its kind.
+                      *
+                      * `icons` is keyed by `file.class`, which is a space: one
+                      * node shared by every row of that class. It can say
+                      * "assets look like this" but never "this asset looks
+                      * like this", and a thumbnail is per file by definition.
+                      *
+                      * The host hands over a node rather than a URL because
+                      * the picture may have to be fetched through an
+                      * authenticated session, which an `img src` cannot do.
+                      * Whatever does that fetching belongs to the application,
+                      * not to a file list. */}
+                    { file.thumbnail ? file.thumbnail
+                    : file.isDirectory ?
                         (file.class && icons && icons.get(file.class)?
                                 (activeLayout === 'grid'? icons.get(file.class).grid : icons.get(file.class).list) 
                                 || 
