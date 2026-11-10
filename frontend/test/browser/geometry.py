@@ -400,11 +400,42 @@ def test_chrome_fits(ch):
           % (c["status"]["bottom"], c["explorer"]["bottom"]))
 
 
+# --- the tree and the listing are set in the same type ---------------------
+# They are the same family, and were not the same size: the listing renders a
+# row's name at 0.8em and the tree rendered its label at the container's full
+# size. A third larger is what a different font looks like to anyone who is
+# not measuring it, and both name the same folder.
+TYPE = """(() => {
+  const label = document.querySelector('.sb-folder-name');
+  const row = document.querySelector('.file-item-container .file-name');
+  if (!label || !row) return null;
+  const px = (el) => parseFloat(getComputedStyle(el).fontSize);
+  const fam = (el) => getComputedStyle(el).fontFamily;
+  return {treeSize: px(label), rowSize: px(row), treeFamily: fam(label), rowFamily: fam(row)};
+})()"""
+
+
+def test_type_matches(ch):
+    print("the navigation tree is set in the same type as the listing")
+    scenario(ch, "host-css")
+
+    t = j(ch, TYPE)
+    if not t:
+        check("there is a tree label and a row to compare", False)
+        return
+    check("there is a tree label and a row to compare", True)
+    check("the sizes match", abs(t["treeSize"] - t["rowSize"]) < 0.6,
+          "tree %.1fpx, row %.1fpx" % (t["treeSize"], t["rowSize"]))
+    check("the families match", t["treeFamily"] == t["rowFamily"],
+          "tree %s, row %s" % (t["treeFamily"], t["rowFamily"]))
+
+
 def main():
     ch = Chrome({"width": 1200, "height": 760, "mobile": False, "ua": None})
     try:
         for t in (test_thumbnails, test_context_menu, test_column_menu,
-                  test_category_menu, test_search_box, test_chrome_fits):
+                  test_category_menu, test_search_box, test_chrome_fits,
+                  test_type_matches):
             t(ch)
             print()
     finally:
