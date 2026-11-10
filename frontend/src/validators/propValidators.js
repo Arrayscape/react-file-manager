@@ -11,6 +11,12 @@ export const dateStringValidator = (props, propName, componentName) => {
 export const urlValidator = (props, propName, componentName) => {
   const url = props[propName];
 
+  // An absent optional prop is not an invalid one. `new URL(undefined)` throws
+  // like any other bad input, so a component that simply did not pass one --
+  // every host that fetches its own bytes, for filePreviewPath -- warned on
+  // each mount. dateStringValidator above already works this way.
+  if (url === undefined || url === null) return;
+
   try {
     new URL(url);
     return;
