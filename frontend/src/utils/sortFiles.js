@@ -14,23 +14,27 @@ const sortFiles = (items, sortKey = 'name', direction = 'asc', format = 'string'
                 comparison = aname.localeCompare(bname)
                 break
             
+            // `data` is optional on a file, and a folder rarely carries any,
+            // so every read of it is guarded. This was reachable by clicking
+            // Size at a level whose rows have no metadata; a remembered sort
+            // reaches it without the click, on the first render.
             case 'size':
-                const sizeA = a.data.size || 0
-                const sizeB = b.data.size || 0
+                const sizeA = a.data?.size || 0
+                const sizeB = b.data?.size || 0
                 comparison = sizeA - sizeB
                 break
-            
+
             case 'updatedAt':
-                const updatedA = a.data.updatedAt ? new Date(a.data.updatedAt).getTime() : 0
-                const updatedB = b.data.updatedAt ? new Date(b.data.updatedAt).getTime() : 0
+                const updatedA = a.data?.updatedAt ? new Date(a.data.updatedAt).getTime() : 0
+                const updatedB = b.data?.updatedAt ? new Date(b.data.updatedAt).getTime() : 0
                 comparison = updatedA - updatedB
                 break
-            
+
             default:
-                if (typeof a.data[sortKey] === 'number') {                    
+                if (typeof a.data?.[sortKey] === 'number') {
                     comparison = (a.data[sortKey] || 0) - (b.data[sortKey] || 0)
                 }
-                else if (typeof a.data[sortKey] === 'string') {
+                else if (typeof a.data?.[sortKey] === 'string') {
                     if (format ==='age') {
                         comparison = Date.parse(b.data[sortKey]) - Date.parse(a.data[sortKey]) 
                     }

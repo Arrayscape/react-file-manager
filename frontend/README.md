@@ -740,6 +740,7 @@ spaces.set('mySpace', {
 | `onRename` | `(file: IFileObject, newName: string) => void` | — | Triggered on rename. |
 | `onSelectionChange` | `(files: IFileObject[]) => void` | — | Triggered whenever selection changes (select or deselect). |
 | `onSelect` ⚠️ | `(files: IFileObject[]) => void` | — | Deprecated. Use `onSelectionChange`. |
+| `onViewOptionsChange` | `(options: IViewOptions) => void` | — | Triggered when any of the view menu's settings or the tile-size slider changes. Never on mount. Pair with `viewOptions` to remember the view. See [Remembering the view](#-remembering-the-view). |
 | `openMode` | `'default'\|'none'` | `'default'` | `'none'` hides the 'Open' option in the context menu. |
 | `permissions` | `IPermissions` | all `true` | Enable/disable individual file actions. See [Permissions](#-permissions). |
 | `primaryColor` | string | `'#6155b4'` | Primary accent color for buttons and highlights. |
@@ -753,7 +754,80 @@ spaces.set('mySpace', {
 | `space` | string | `'filedata'` | Active space name. |
 | `spaces` | `Map<string, ISpace>` | — | Space definitions map. |
 | `style` | `React.CSSProperties` | — | Inline styles on the root element. |
+| `viewOptions` | `IViewOptions` | — | The view menu's settings and the tile size, as one record. Read once, at mount. Overrides `defaultNavExpanded` and `defaultTileSize`. See [Remembering the view](#-remembering-the-view). |
 | `width` | `string\|number` | `'100%'` | Component width. |
+
+---
+
+## 💾 Remembering the view
+
+How somebody left the view is theirs, not the component's: it keeps all of it
+for as long as it is mounted, and a host that wants it to survive a reload
+supplies it and is told when it changes.
+
+```jsx
+const KEY = 'media-library-view'
+const saved = useRef(JSON.parse(localStorage.getItem(KEY) || '{}')).current
+const save = (patch) =>
+    localStorage.setItem(KEY, JSON.stringify(Object.assign(saved, patch)))
+
+<FileManager
+    layout={saved.layout}
+    onLayoutChange={(layout) => save({ layout })}
+    viewOptions={saved.options}
+    onViewOptionsChange={(options) => save({ options })}
+/>
+```
+
+Both pairs work the same way, and both read their prop **once, at mount**:
+they say where the view starts, not what the view is. Passing a record back
+after being told about it is therefore safe and does nothing, which is what
+the snippet above does on every render.
+
+`onViewOptionsChange` is not called on mount, so a host that writes whatever
+it is told does not rewrite the record it just supplied, and a host with
+nothing saved is not handed defaults as though somebody had chosen them.
+
+Every field of `viewOptions` is optional and is checked on the way in: an
+unknown key is dropped, a non-boolean falls back to the default, a width that
+is not a positive number is ignored, and `tileSize` is clamped to 32–160. A
+record written by an older version, or edited by hand, cannot put the
+component in a state it has no UI for.
+
+```ts
+interface IViewOptions {
+    statusBar?: boolean   // the bar along the bottom, which the slider lives in
+    checkBox?: boolean    // a selection checkbox on every row and tile
+    folderTree?: boolean  // the navigation pane
+    breadcrumb?: boolean  // the trail above the listing
+    tileSize?: number     // the edge of a tile's picture, 32..160 CSS pixels
+
+    sort?: {
+        key: string                   // a column's `source`, or 'name'
+        direction: 'asc' | 'desc'
+        format?: string               // the column's `format`
+    }
+
+    // Per space, then per column.
+    columns?: {
+        [spaceName: string]: {
+            [columnName: string]: {
+                width?: number        // pixels, as dragged
+                hidden?: boolean      // removed with the column's ×
+            }
+        }
+    }
+}
+```
+
+`columns` is keyed by space because a column belongs to one. Two spaces may
+both have a column called `size` and they are not the same column — before
+this they shared one width, which is why every width used to be discarded on
+each navigation. They are kept separately and kept.
+
+A `sort.key` naming a column that no longer exists is kept rather than
+discarded: nothing compares, the listing is in its natural order, and one
+click on a header puts it right.
 
 ---
 

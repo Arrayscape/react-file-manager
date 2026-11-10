@@ -1,11 +1,11 @@
-import { useMemo, useState, forwardRef, useImperativeHandle } from 'react'
+import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import Loader from '../components/Loader/Loader'
 import Toolbar from './Toolbar/Toolbar'
 import NavigationPane from './NavigationPane/NavigationPane'
 import BreadCrumb from './BreadCrumb/BreadCrumb'
 import FileList from './FileList/FileList'
 import Actions from './Actions/Actions'
-import { OptionsProvider, useOptions } from '../contexts/OptionsContext'
+import { OptionsProvider, useOptions, normaliseColumns } from '../contexts/OptionsContext'
 import { FilesProvider } from '../contexts/FilesContext'
 import { FileNavigationProvider, useFileNavigation } from '../contexts/FileNavigationContext'
 import { SelectionProvider } from '../contexts/SelectionContext'
@@ -81,6 +81,8 @@ const FileManagerBody = ({ props, innerRef }) => {
         language = 'en-US',
         permissions: userPermissions = {},
         collapsibleNav = false,
+        viewOptions,
+        onViewOptionsChange,
         className = '',
         style = {},
         searchMode = 'auto',
@@ -96,7 +98,7 @@ const FileManagerBody = ({ props, innerRef }) => {
         formatDate = defaultFormatDate
     } = props
 
-    const { setCurrentPath } = useFileNavigation()
+    const { setCurrentPath, currentFolder, sortConfig } = useFileNavigation()
     const [srchText, setSrchText] = useState('')
     const [srchRegex, setSrchRegex] = useState(false)
     const [srchCasing, setSrchCasing] = useState(false)
@@ -107,12 +109,10 @@ const FileManagerBody = ({ props, innerRef }) => {
     // it where the provider is mounted.
     const { options, toggleFolderTree } = useOptions()
     const isNavigationPaneOpen = options.folderTree
-    const [headersWidth, setHeadersWidth] = useState({})
-    const [columnWidths, setColumnWidths] = useState({})
+    // { [spaceName]: { [columnName]: { width?, hidden? } } } -- read once.
+    const [columns, setColumns] = useState(() => normaliseColumns(viewOptions?.columns))
 
     const handleNavigate = (path) => {
-        setHeadersWidth({})
-        setColumnWidths({})
         setCurrentPath(path)
         onFolderChange?.(path)
     }
@@ -179,27 +179,101 @@ const FileManagerBody = ({ props, innerRef }) => {
         })
     }
 
+    // Which space's columns are on screen. A folder declaring `children` is
+    // listing things of that class, and FileList switches its columns to
+    // match, so the widths being dragged are that class's -- not those of the
+    // space this component was handed.
+    const activeSpace =
+        typeof currentFolder?.children === 'string' ? currentFolder.children : space
+
+    // What the header and the rows expect: one flat map of name to width, for
+    // the space they are drawing.
+    const widths = useMemo(() => {
+        const out = {}
+        for (const [name, col] of Object.entries(columns[activeSpace] || {})) {
+            if (col.width !== undefined) out[name] = col.width
+        }
+        return out
+    }, [columns, activeSpace])
+
+    // Hidden columns are restored onto the spaces, once, because that is where
+    // every reader of them looks. The component already writes there when
+    // somebody hides a column; this is the same write, for a column somebody
+    // hid before reloading.
+    const restored = useRef(false)
+    useEffect(() => {
+        if (restored.current) return
+        restored.current = true
+        for (const [spaceName, cols] of Object.entries(columns)) {
+            const properties = spaces.get(spaceName)?.properties
+            if (!properties) continue
+            for (const [name, col] of Object.entries(cols)) {
+                if (col.hidden === undefined) continue
+                const property = properties.find(p => p.name === name)
+                if (property) property.visible = !col.hidden
+            }
+        }
+        // Columns are restored from the record the first render read, and the
+        // spaces map is the host's own object: neither is state to follow.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // The one place the whole view is assembled, because it is kept in three:
+    // the view menu's settings in the options context, the sort in the
+    // navigation context, and the columns here. A host is told all of it or
+    // none of it.
+    //
+    // Never on mount: a host that writes what it is told would otherwise write
+    // back the record it just supplied, and a host with nothing saved would be
+    // handed defaults as though somebody had chosen them.
+    const notify = useRef(onViewOptionsChange)
+    useEffect(() => { notify.current = onViewOptionsChange })
+    const reported = useRef(false)
+    useEffect(() => {
+        if (!reported.current) {
+            reported.current = true
+            return
+        }
+        notify.current?.({ ...options, sort: sortConfig, columns })
+    }, [options, sortConfig, columns])
+
+    // A column belongs to a space. Widths used to be one flat map keyed by the
+    // column's bare name, shared by every space -- so a width set on the
+    // library's Size landed on a transform's Size, which is why navigating
+    // threw them all away. Keyed by space, there is nothing to throw away.
     const onHeaderChangeWidth = (name, size) => {
-        setHeadersWidth(prev => ({ ...prev, [name]: size }))
-        setColumnWidths(prev => ({ ...prev, [name]: size }))
+        setColumns(prev => ({
+            ...prev,
+            [activeSpace]: { ...prev[activeSpace], [name]: { ...prev[activeSpace]?.[name], width: size } },
+        }))
+    }
+
+    // Which columns are showing is read off the space's own properties, by the
+    // header and by every row, so a toggle writes there. It is recorded here
+    // as well, because that object belongs to the host and is not something to
+    // hand back to it as our state.
+    const setHidden = (spaceName, name, hidden) => {
+        setColumns(prev => ({
+            ...prev,
+            [spaceName]: { ...prev[spaceName], [name]: { ...prev[spaceName]?.[name], hidden } },
+        }))
     }
 
     const onHeaderRemove = (spaceName, name) => {
         let col = spaces.get(spaceName).properties.find(p => p.name === name)
         if (col) col.visible = false
-        setColumnWidths({ ...columnWidths })
+        setHidden(spaceName, name, true)
     }
 
     const onHeaderToggle = (spaceName, name) => {
         let col = spaces.get(spaceName).properties.find(p => p.name === name)
         if (col) col.visible = !col.visible
-        setColumnWidths({ ...columnWidths })
+        setHidden(spaceName, name, col ? !col.visible : undefined)
     }
 
     const onHeadersReset = (spaceName) => {
         spaces.get(spaceName).properties.forEach(header => header.visible = true)
-        setHeadersWidth({})
-        setColumnWidths({})
+        setColumns(prev => ({ ...prev, [spaceName]: {} }))
     }
 
     return (
@@ -284,8 +358,8 @@ const FileManagerBody = ({ props, innerRef }) => {
                                 />
                                 <Backdrop isLocked={isLocked} message='Waiting...' />
                                 <FileList
-                                    headersWidth={headersWidth}
-                                    columnWidths={columnWidths}
+                                    headersWidth={widths}
+                                    columnWidths={widths}
                                     onHeaderChangeWidth={onHeaderChangeWidth}
                                     onHeaderRemove={onHeaderRemove}
                                     onHeaderToggle={onHeaderToggle}
@@ -338,13 +412,21 @@ const FileManagerBody = ({ props, innerRef }) => {
 const FileManager = forwardRef((props, ref) => {
     return (
         <OptionsProvider
-            folderTree={props.defaultNavExpanded ?? true}
-            tileSize={props.defaultTileSize}
+            // `viewOptions` is the whole record a host restores, so it wins
+            // over the two single-setting props that predate it.
+            initial={{
+                folderTree: props.defaultNavExpanded,
+                tileSize: props.defaultTileSize,
+                ...props.viewOptions,
+            }}
         >
             <TranslationProvider language={props.language || 'en-US'}>
                 <FilesProvider filesData={props.files} onError={props.onError}>
                     {/* Eliminamos el callback del Provider para dispararlo manualmente en el Body */}
-                    <FileNavigationProvider initialPath={props.initialPath || ''}>
+                    <FileNavigationProvider
+                        initialPath={props.initialPath || ''}
+                        initialSort={props.viewOptions?.sort}
+                    >
                         <FileManagerBody props={props} innerRef={ref} />
                     </FileNavigationProvider>
                 </FilesProvider>
@@ -415,6 +497,35 @@ FileManager.propTypes = {
     // The edge of a tile's picture in the grid, in CSS pixels, before anyone
     // has touched the slider in the status bar. Clamped to TILE_MIN..TILE_MAX.
     defaultTileSize: PropTypes.number,
+    // The whole view, as one record -- what a host that remembers it hands
+    // back. Read once, at mount: this is where the view starts, not what the
+    // view is. Every field is optional and is checked, so a record saved by an
+    // older version, or edited by hand, cannot put the component in a state it
+    // has no UI for.
+    viewOptions: PropTypes.shape({
+        statusBar: PropTypes.bool,
+        checkBox: PropTypes.bool,
+        folderTree: PropTypes.bool,
+        breadcrumb: PropTypes.bool,
+        tileSize: PropTypes.number,
+        sort: PropTypes.shape({
+            key: PropTypes.string,
+            direction: PropTypes.oneOf(['asc', 'desc']),
+            format: PropTypes.string,
+        }),
+        // Per space, then per column: its width in pixels, and whether it is
+        // hidden. Keyed by space because a column belongs to one.
+        columns: PropTypes.objectOf(
+            PropTypes.objectOf(
+                PropTypes.shape({ width: PropTypes.number, hidden: PropTypes.bool })
+            )
+        ),
+    }),
+    // Called with that whole record whenever any of it changes, and never on
+    // mount. Pair it with `viewOptions` to remember the view; pair the two of
+    // them with `layout` and `onLayoutChange`, which work the same way, to
+    // remember all of it.
+    onViewOptionsChange: PropTypes.func,
     className: PropTypes.string,
     style: PropTypes.object,
     formatDate: PropTypes.func,
